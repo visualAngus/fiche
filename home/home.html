@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home</title>
+    <link rel="stylesheet" href="/css/fiche_editor.css" />
+    <link rel="stylesheet" href="/css/style_txt_fiche.css" />
+    <link rel="stylesheet" href="/css/style_home.css" />
+
+
+    <!-- font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Courgette&family=Itim&family=Nerko+One&family=Oregano:ital@0;1&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap"
+        rel="stylesheet">
+    
+</head>
+
+<body>
+<button onclick="getFiche()">Get fiche</button>
+</body>
+<script>
+
+    async function openFicheEditor(id) {
+        const response = await fetch("http://localhost:3000/editor", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        });
+        const data = await response.text();
+        if (response.ok) {
+            document.open();
+            document.write(data);
+            document.close();
+
+            // modifier l'url
+            history.pushState(null, "", "/editor?id=" + id);
+        } else if (response.status === 401) {
+            document.open();
+            document.write(data);
+            document.close();
+        }
+        
+    }
+
+
+    async function openFiche(id) {
+        const response = await fetch("http://localhost:3000/getData", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ id }),
+        });
+        const data = await response.json();
+        if (response.ok) {
+            //supression de tout localstorage
+            localStorage.clear();
+            //ajout de la fiche dans le localstorage
+            let fiche = data.data;
+            let local_storage = fiche.local_storage;
+            local_storage = local_storage.split(";");
+            for (let i = 0; i < local_storage.length; i++) {
+                let key = local_storage[i].split('=')[0];
+                let value = local_storage[i].split('=')[1];
+                localStorage.setItem(key, value);
+            }
+            openFicheEditor(id);
+        } else if (response.status === 401) {
+            document.open();
+            document.write(data);
+            document.close();
+        }
+    }
+
+
+    async function getFiche() {
+        const response = await fetch("http://localhost:3000/getFiche", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        });
+        const data = await response.json();
+        if (response.ok) {
+            if (data.success) {
+                let data_ = data.data;
+                for (let i = 0; i < data_.length; i++) {
+                    let fiche = data_[i].inner_html;
+                    let id = data_[i].id_fiche;
+                    let div = document.createElement("div");
+                    div.className = "fiche_home_div";
+                    div.setAttribute("fiche_home_id", id);
+                    div.innerHTML = fiche;
+                    document.body.appendChild(div);
+
+                    div.addEventListener("click", function() {
+                        openFiche(id);
+                    });
+
+
+                }
+            }
+        } else if (response.status === 401) {
+            document.open();
+            document.write(data);
+            document.close();
+        }
+    }
+</script>
+
+</html>

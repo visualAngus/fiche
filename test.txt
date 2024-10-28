@@ -1,0 +1,3 @@
+<div class="div_fiche">
+                    <h1 id="titre_fiche">Philo</h1>
+                <div class="div_titre_fiche normal" id_titre_fiche="0">Comment vas tu ?</div><div class="div_def_fiche first" id_def_fiche="1"><strong>Le bien:</strong> c'est très compliqé</div></div>

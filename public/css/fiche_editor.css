@@ -1,0 +1,425 @@
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+div{
+    unicode-bidi: isolate;
+}
+body{
+    height: 100dvh;
+    width: 100dvw;
+    overflow-x: hidden;
+
+    --border-color: #cfd1d6;
+    --large-background-color: #eceef4;
+    --contrast-color: #1375d1;
+    --texte-low-constrast: #3b3b3b;
+    --texte-high-constrast: #df2424;	
+    --texte-color : #000;
+
+
+
+    background-color: var(--large-background-color);
+
+}
+
+main{
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: flex-start;
+    height: 100%;
+    width: 100%;
+    padding-left: 20px;
+    padding-right: 20px;
+    padding-top: 20px;
+    gap: 10px;
+
+
+}
+.div_editor_section_main{
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    /* height: 100%; */
+    min-height: 200px;
+    width: 60%;
+    min-width: 600px;
+    padding: 25px;
+    padding-bottom: 80px;
+    gap: 20px;
+
+    border-radius: 10px ;
+    overflow: auto;
+
+
+    background-color: #fff;
+    position: relative;
+}
+
+/* titre de la fiche */
+.div_titre_editor{
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    height: 70px;
+    width: 100%;
+    min-height: 70px;
+
+    border-bottom: 1px solid var(--border-color);
+}
+
+#Titre_main{
+    width: 30%;
+    min-width: 150px;
+    height: 100%;
+    font-size: 2em;
+    color: black;
+
+    background-color: transparent;
+    border: none;
+    outline: none;
+
+    font-family: "Raleway", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 700;
+    font-style: normal;
+    line-height: 36px;
+
+}
+
+/* classique texte */
+
+.div_editor_classic_txt,.div_editor_titre_txt,.div_editor_definition_txt{
+    width: 100%;
+}
+
+.div_info_editor{
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    height: 30px;
+    width: 100%;
+    min-height: 30px;
+    font-weight: 700;
+    font-family: "Raleway", sans-serif;
+    font-size: 0.8em;
+    color: var(--texte-low-constrast);
+}
+
+.div_header_editor_txt{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+
+}
+.toolbar {
+    margin-bottom: 10px;
+    background-color: var(--large-background-color);
+    padding: 10px;
+    border-radius: 5px;
+    height: 100%;
+    width: fit-content;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: center;
+    flex-direction: row;
+
+}
+.toolbar button {
+    padding: 5px;
+    border: none;
+    border-radius: 4px;
+    background-color: transparent;
+    cursor: pointer;
+    color: #000;
+    font-size: 1em;
+    font-weight: 600;
+    font-family: "Raleway", sans-serif;
+    transition: color 0.2s;
+}
+.toolbar button:hover {
+    color: var(--contrast-color);
+}
+.toolbar input[type="color"] {
+    padding: 5px;
+    height: 30px;
+    border: none;
+    border-radius: 4px;
+    background-color: transparent;
+    cursor: pointer;
+    color: #000;
+    font-size: 1em;
+    font-weight: 600;
+    font-family: "Raleway", sans-serif;
+    transition: color 0.2s;
+}
+
+.toolbar select{
+    padding: 1px;
+    border: none;
+    border-radius: 4px;
+    background-color: transparent;
+    cursor: pointer;
+    color: #000;
+    font-size: 1em;
+    font-weight: 600;
+    font-family: "Raleway", sans-serif;
+    transition: color 0.2s;
+}
+.div_def_input{
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: flex-start;
+    padding-top: 10px;
+    gap: 10px;
+}
+#mot{
+    width: 15%;
+    max-width: 250px;
+    min-width: 100px;
+    height: 50px;
+    padding: 10px;
+    font-size: 1em;
+    color: black;
+    background-color: var(--large-background-color);
+    border: none;
+    outline: none;
+
+}
+#definition{
+    width: 85%;
+    padding: 10px;
+    font-size: 1em;
+    color: black;
+    background-color: var(--large-background-color);
+    border: none;
+    outline: none;
+}
+
+#suprim{
+    padding: 5px;
+    border: none;
+    border-radius: 4px;
+    background-color: transparent;
+    cursor: pointer;
+    color: #000;
+    font-size: 1em;
+    font-weight: 600;
+    font-family: "Raleway", sans-serif;
+    transition: color 0.2s;
+    height: 100%;
+    transform: translateY(-3px);
+}
+#suprim:hover {
+    color: var(--texte-high-constrast);
+}
+#suprim2{
+    position: absolute;
+    right: 0;
+    padding: 5px;
+    border: none;
+    border-radius: 4px;
+    background-color: transparent;
+    cursor: pointer;
+    color: #000;
+    font-size: 1em;
+    font-weight: 600;
+    font-family: "Raleway", sans-serif;
+    transition: color 0.2s;
+    height: 100%;
+    transform: translateY(-200%);
+}
+#suprim2:hover {
+    color: var(--texte-high-constrast);
+}
+.separateur{
+    margin: 0 5px;
+    width: 2px;
+    height: 25px;
+    background-color: var(--border-color);
+}
+
+.editor {
+    padding: 10px;
+    padding-left: 30px;
+    min-height: 70px;
+    max-height: 350px;
+    overflow-y: auto;
+    outline: none;
+    border-radius: 5px;
+
+    background-color: var(--large-background-color);
+
+    font-weight: 500;
+    font-family: "Raleway", sans-serif;
+    transition: color 0.2s;
+
+    white-space: pre-wrap;
+    tab-size: 4;
+
+}
+.editor[data-placeholder]:empty::before {
+    content: attr(data-placeholder);
+    color: #aaa; /* Couleur du texte du placeholder */
+    pointer-events: none; /* Permet de cliquer dans la div sans que le placeholder gêne */
+}
+span {
+    background-color: inherit; /* Assure que le fond est hérité ou transparent */
+}
+.div_bnt_add{
+    position: absolute;
+    right: 50%;
+    bottom: 10px;
+    width: 100%;
+    height: 35px;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 30px;
+    padding-left: 25px;
+
+    transform: translateX(50%);
+}
+
+.div_bnt_add button{
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    background-color: var(--large-background-color);
+    cursor: pointer;
+    color: var(--texte-color);
+    font-size: 1em;
+    font-weight: 600;
+    font-family: "Raleway", sans-serif;
+    transition: background-color 0.2s;
+}
+.div_bnt_add button:active {
+    background-color: var(--contrast-color);
+}
+
+
+/* fiche */
+.div_preview_main {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    height: 100%;
+    width: 40%;
+    min-width: 500px;
+    gap: 20px;
+
+    border-radius: 0 10px 0 0;
+
+    overflow: hidden;
+
+    color: var(--texte-high-constrast);
+
+}
+.div_fiche_main{
+    position: relative; /* Add this line */
+    width: 100%;
+    height: 900px;
+    padding: 60px;
+    color: var(--texte-color);
+}
+.white{
+    position: relative;
+    width: 100%;
+}
+.white::before {
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 900px;
+    width: 100%;
+    content: ' ';
+    background-size: contain;
+    background-repeat: repeat-y;
+    z-index: -1;
+    opacity:1;
+    background-color: #fff;
+    border-radius: 10px;
+
+    border: 1px solid var(--border-color);
+
+}
+.div_fiche{
+    height: 900px;
+    width: 100%;
+    overflow: auto;
+    position: relative;
+
+}
+
+.div_fiche::before {
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 900px;
+    width: 100%;
+    background: url('/img/bg.png');
+    content: ' ';
+    background-size: contain;
+    background-repeat: repeat-y;
+    z-index: -1;
+    opacity: 0.3;
+
+    border-radius: 10px;
+}
+
+.div_fiche{
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    overflow: auto;
+
+    font-family: "Itim", cursive;
+    font-weight: 400;
+    font-style: normal;
+    padding: 5px;
+    padding-left: 30px;
+    white-space: pre-wrap;
+
+}
+
+.btn_save_div{
+    position: absolute;
+    z-index: 20;
+    top: 30px;
+    right: 100px;
+    padding: 10px;
+    width: 100px;
+    height: 35px;
+    border: none;
+    border-radius: 4px;
+    background-color: #fff;
+    cursor: pointer;
+    color: var(--texte-color);
+
+
+    font-size: 1.5em;
+    font-weight: 600;
+    font-family: "Itim", sans-serif;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    user-select: none;
+
+    transition: background-color 0.2s;
+}
+.btn_save_div:active {
+    background-color: var(--contrast-color);
+}

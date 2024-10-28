@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fiche</title>
+    <link rel="stylesheet" href="/css/fiche_editor.css" />
+    <link rel="stylesheet" href="/css/style_txt_fiche.css" />
+
+
+    <!-- font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Courgette&family=Itim&family=Nerko+One&family=Oregano:ital@0;1&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <main>
+        <div class="div_editor_section_main">
+            <div class="div_bnt_add">
+                <button id="btn_titre">Titre</button>
+                <button id="btn_texte">Texte</button>
+                <button id="btn_definition">Définition</button>
+                <button id="btn_texte_retenir">Texte à retenir</button>
+                <button id="btn_vocabulaire">Vocabulaire</button>
+            </div>
+            <div class="div_titre_editor">
+                <input type="text" id="Titre_main" placeholder="Titre" />
+            </div>
+
+            <!-- <div class="div_editor_classic_txt" id_editor="14">
+                <div class="div_info_editor">
+                    <div class="div_type_div">
+                        <h2>Texte</h2>
+                    </div>
+                </div>
+                <div class="div_header_editor_txt">
+                    <div class="toolbar"><button onclick="bold()">Gras</button><button
+                            onclick="italic()">Italique</button><button onclick="underline()">Souligné</button>
+                        <div class="separateur"></div><button onclick="insertUnorderedList()">Liste à
+                            puces</button><button onclick="insertOrderedList()">Liste numérotée</button>
+                        <div class="separateur"></div><button onclick="justifyLeft()">Gauche</button><button
+                            onclick="justifyCenter()">Centre</button><button onclick="justifyRight()">Droite</button>
+                        <div class="separateur"></div><button onclick="surligne(color)">Surligné</button><input
+                            type="color">
+                    </div><button id="suprim">Supprimer</button>
+                </div>
+                <div class="editor" contenteditable="true"><br></div>
+            </div> -->
+
+            <!-- <div class="div_editor_definition_txt">
+                <div class="div_info_editor">
+                    <div class="div_type_div">
+                        <h2>Définition</h2>
+                    </div>
+                </div>
+                <div class="div_def_input">
+                    <input type="text" id="mot" placeholder="Mot à définir" />
+                    <div class="editor" id="definition" contenteditable="true" data-placeholder="Définition"></div>
+                </div>
+            </div> -->
+        </div>
+        <div class="div_preview_main">
+            <div class="btn_save_div">
+                Save
+            </div>
+            <div class="div_fiche_main">
+                <div class="white"></div>
+                <div class="div_fiche">
+                    <h1 id="titre_fiche">Titre</h1>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+<script>
+
+    // var
+    var id = localStorage.getItem("nb_editor") || 0;
+    var color = "#ffff00";
+    var liste_key_local_storage = [];
+    liste_key_local_storage.push("nb_editor");
+
+    // gestion des btn
+    document.getElementById("btn_texte").addEventListener("click", () => {
+        createEditorTexte(id, "", 0);
+        id++;
+        localStorage.setItem("nb_editor", id);
+    });
+    document.getElementById("btn_titre").addEventListener("click", () => {
+        createEditorTitre(id, "", "Normal");
+        id++;
+        localStorage.setItem("nb_editor", id);
+    });
+    document.getElementById("btn_definition").addEventListener("click", () => {
+        createEditorDefinition(id, "", "");
+        id++;
+        localStorage.setItem("nb_editor", id);
+    });
+    document.getElementById("btn_texte_retenir").addEventListener("click", () => {
+        createEditorTexte(id, "", 1);
+        id++;
+        localStorage.setItem("nb_editor", id);
+    });
+
+    function hexToRgb(hex) {
+        // Supprime le symbole # si présent
+        hex = hex.replace(/^#/, "");
+
+        // Convertit les paires hexadécimales en valeurs décimales pour RGB
+        const r = parseInt(hex.substring(0, 2), 16);
+        const g = parseInt(hex.substring(2, 4), 16);
+        const b = parseInt(hex.substring(4, 6), 16);
+
+        return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    function bold() {
+        document.execCommand("bold");
+    }
+    function italic() {
+        document.execCommand("italic");
+    }
+    function underline() {
+        document.execCommand("underline");
+    }
+    function insertUnorderedList() {
+        const selection = window.getSelection();
+        if (selection.rangeCount > 0) {
+            document.execCommand("insertUnorderedList");
+        }
+    }
+    function insertOrderedList() {
+        const selection = window.getSelection();
+        if (selection.rangeCount > 0) {
+            document.execCommand("insertOrderedList");
+        }
+    }
+    function justifyLeft() {
+        document.execCommand("justifyLeft");
+    }
+    function justifyCenter() {
+        document.execCommand("justifyCenter");
+    }
+    function justifyRight() {
+        document.execCommand("justifyRight");
+    }
+    function surligne(color) {
+        const selection = window.getSelection();
+
+        if (selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            // Si le texte est déjà surligné, retire le style
+            console.log(selection.anchorNode.parentNode.style.backgroundColor);
+            color = hexToRgb(color);
+            console.log(color);
+
+            if (selection.anchorNode.parentNode.style.backgroundColor === color) {
+                document.execCommand("hiliteColor", false, "transparent");
+            } else {
+                document.execCommand("hiliteColor", false, color);
+            }
+
+            // Déclenche manuellement l'événement 'input' pour informer des changements
+            const event = new Event('input', {
+                bubbles: true,
+                cancelable: true,
+            });
+            selection.anchorNode.parentNode.dispatchEvent(event);
+        }
+    }
+
+    document.getElementById("titre_fiche").textContent = localStorage.getItem("titre_fiche") || "Titre";
+    document.getElementById("Titre_main").value = localStorage.getItem("titre_fiche") || "Titre";
+
+    document.getElementsByClassName("div_titre_editor")[0].addEventListener("input", () => {
+        document.getElementById("titre_fiche").textContent = document.getElementById("Titre_main").value;
+        localStorage.setItem("titre_fiche", document.getElementById("Titre_main").value);
+    });
+
+
+    function createEditorTexte(id, content, important) {
+        const section = document.createElement("div");
+        section.className = "div_editor_classic_txt";
+        section.setAttribute("id_editor", id);
+
+        const infoEditor = document.createElement("div");
+        infoEditor.className = "div_info_editor";
+
+        const typeDiv = document.createElement("div");
+        typeDiv.className = "div_type_div";
+        const h2 = document.createElement("h2");
+        if (important) {
+            h2.textContent = "Texte à retenir";
+        } else {
+            h2.textContent = "Texte";
+        }
+        typeDiv.appendChild(h2);
+
+        infoEditor.appendChild(typeDiv);
+        section.appendChild(infoEditor);
+
+        const headerEditorTxt = document.createElement("div");
+        headerEditorTxt.className = "div_header_editor_txt";
+
+        const toolbar = document.createElement("div");
+        toolbar.className = "toolbar";
+
+        const buttons = [
+            { text: "Gras", onclick: "bold()" },
+            { text: "Italique", onclick: "italic()" },
+            { text: "Souligné", onclick: "underline()" },
+            { separator: true },
+            { text: "Liste à puces", onclick: "insertUnorderedList()" },
+            { text: "Liste numérotée", onclick: "insertOrderedList()" },
+            { separator: true },
+            { text: "Gauche", onclick: "justifyLeft()" },
+            { text: "Centre", onclick: "justifyCenter()" },
+            { text: "Droite", onclick: "justifyRight()" },
+            { separator: true },
+            { text: "Surligné", onclick: "surligne(color)" }
+
+        ];
+
+        buttons.forEach((button) => {
+            if (button.separator) {
+                const separator = document.createElement("div");
+                separator.className = "separateur";
+                toolbar.appendChild(separator);
+            } else {
+                const btn = document.createElement("button");
+                btn.textContent = button.text;
+                btn.setAttribute("onclick", button.onclick);
+                toolbar.appendChild(btn);
+            }
+        });
+
+        const color_picker = document.createElement("input");
+        color_picker.type = "color";
+        color_picker.value = color;
+        color_picker.addEventListener("input", () => {
+            color = color_picker.value;
+            surligne(color);
+        });
+        toolbar.appendChild(color_picker);
+
+        headerEditorTxt.appendChild(toolbar);
+
+        const deleteButton = document.createElement("button");
+        deleteButton.id = "suprim";
+        deleteButton.textContent = "Supprimer";
+        deleteButton.addEventListener("click", () => {
+            section.remove();
+            document.querySelector(`[id_txt_fiche="${id}"]`).remove();
+            localStorage.removeItem("editorContent_" + id);
+            localStorage.removeItem("editorImportant_" + id);
+        });
+        headerEditorTxt.appendChild(deleteButton);
+
+
+        section.appendChild(headerEditorTxt);
+
+        const editor = document.createElement("div");
+        editor.className = "editor";
+        editor.setAttribute("contenteditable", "true");
+        editor.setAttribute("data-placeholder", "Écrivez ici");
+        section.appendChild(editor);
+        editor.innerHTML = content;
+
+        document.getElementsByClassName("div_editor_section_main")[0]
+            .appendChild(section);
+
+        // ajout de l'espace texte dans la fiche
+        const div_fiche = document.getElementsByClassName("div_fiche")[0];
+        let div_txt = document.createElement("div");
+        div_txt.className = "div_txt_fiche";
+
+        if (important) {
+            div_txt.classList.add("important");
+        }
+
+        div_txt.setAttribute("id_txt_fiche", id);
+        div_txt.innerHTML = content;
+        div_fiche.appendChild(div_txt);
+
+        // modification de la fiche en fonction de l'éditeur
+        editor.addEventListener("keydown", function (event) {
+            if (event.key === "Tab") {
+                event.preventDefault(); // Empêche le comportement par défaut (changement d'élément)
+
+                // Crée un espace insécable
+                const space = document.createTextNode("\t");
+                const range = document.getSelection().getRangeAt(0);
+
+                // Insère l'espace à la position actuelle du curseur
+                range.deleteContents(); // Supprime tout ce qui est sélectionné (si nécessaire)
+                range.insertNode(space);
+
+                // Déplace le curseur après l'espace inséré
+                range.setStartAfter(space);
+                range.collapse(true);
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+
+                // Met à jour le contenu de la fiche
+                div_txt.innerHTML = editor.innerHTML;
+                localStorage.setItem("editorContent_" + id, editor.innerHTML);
+
+            }
+        });
+
+        editor.addEventListener("input", () => {
+            div_txt.innerHTML = editor.innerHTML;
+            localStorage.setItem("editorContent_" + id, editor.innerHTML);
+            localStorage.setItem("editorImportant_" + id, important);
+        });
+
+        liste_key_local_storage.push("editorContent_" + id);
+        liste_key_local_storage.push("editorImportant_" + id);
+
+    }
+    
+    function createEditorTitre(id, content, type_) {
+        const section = document.createElement("div");
+        section.className = "div_editor_titre_txt";
+        section.setAttribute("id_editor", id);
+
+        const infoEditor = document.createElement("div");
+        infoEditor.className = "div_info_editor";
+
+        const typeDiv = document.createElement("div");
+        typeDiv.className = "div_type_div";
+        const h2 = document.createElement("h2");
+        h2.textContent = "Titre";
+        typeDiv.appendChild(h2);
+
+        infoEditor.appendChild(typeDiv);
+        section.appendChild(infoEditor);
+
+
+
+        const headerEditorTxt = document.createElement("div");
+        headerEditorTxt.className = "div_header_editor_txt";
+
+        const toolbar = document.createElement("div");
+        toolbar.className = "toolbar";
+
+        const editorTypeSelect = document.createElement("select");
+        editorTypeSelect.id = "editorType";
+
+        const liste_type = ["Titre 1", "Titre 2", "Titre 3", "Titre 4", "Titre 5", "Titre 6", "Normal"];
+
+        liste_type.forEach((type) => {
+            const option = document.createElement("option");
+            option.value = type;
+            option.textContent = type;
+            editorTypeSelect.appendChild(option);
+        });
+
+        if (type_) {
+            editorTypeSelect.value = type_;
+        } else {
+            editorTypeSelect.value = "Normal";
+        }
+
+
+        toolbar.appendChild(editorTypeSelect);
+
+        headerEditorTxt.appendChild(toolbar);
+
+        const deleteButton = document.createElement("button");
+        deleteButton.id = "suprim";
+        deleteButton.textContent = "Supprimer";
+        deleteButton.addEventListener("click", () => {
+            section.remove();
+            document.querySelector(`[id_titre_fiche="${id}"]`).remove();
+            localStorage.removeItem("editorContentTitre_" + id);
+            localStorage.removeItem("editorTypeTitre_" + id);
+        });
+        headerEditorTxt.appendChild(deleteButton);
+
+        section.appendChild(headerEditorTxt);
+
+        const editor = document.createElement("div");
+        editor.className = "editor";
+        editor.setAttribute("contenteditable", "true");
+        section.appendChild(editor);
+        editor.innerHTML = content;
+
+        document.getElementsByClassName("div_editor_section_main")[0]
+            .appendChild(section);
+
+        // ajout de l'espace titre dans la fiche
+        const div_fiche = document.getElementsByClassName("div_fiche")[0];
+        let div_titre = document.createElement("div");
+        div_titre.className = "div_titre_fiche";
+        div_titre.setAttribute("id_titre_fiche", id);
+        div_titre.innerHTML = content;
+        div_fiche.appendChild(div_titre);
+
+        // modification de la fiche en fonction de l'éditeur
+        editor.addEventListener("input", () => {
+            div_titre.innerHTML = editor.innerHTML;
+            localStorage.setItem("editorContentTitre_" + id, editor.innerHTML);
+
+        });
+
+        function changeTitre() {
+            const type = editorTypeSelect.value;
+            editor.classList.remove("titre1", "titre2", "titre3", "titre4", "titre5", "titre6", "normal");
+            editor.classList.add(type.toLowerCase().replace(" ", ""));
+            div_titre.innerHTML = editor.innerHTML;
+            div_titre.classList.remove("titre1", "titre2", "titre3", "titre4", "titre5", "titre6", "normal");
+            div_titre.classList.add(type.toLowerCase().replace(" ", ""));
+            localStorage.setItem("editorContentTitre_" + id, editor.innerHTML);
+            localStorage.setItem("editorTypeTitre_" + id, type);
+        }
+
+        //selection du type de titre
+        editorTypeSelect.addEventListener("change", () => {
+            changeTitre()
+        });
+        changeTitre()
+
+        liste_key_local_storage.push("editorContentTitre_" + id);
+        liste_key_local_storage.push("editorTypeTitre_" + id);
+
+    }
+
+
+    function createEditorDefinition(id, mot, content) {
+        const section = document.createElement("div");
+        section.className = "div_editor_definition_txt";
+        section.setAttribute("id_editor", id);
+
+        const infoEditor = document.createElement("div");
+        infoEditor.className = "div_info_editor";
+
+        const typeDiv = document.createElement("div");
+        typeDiv.className = "div_type_div";
+        const h2 = document.createElement("h2");
+        h2.textContent = "Définition";
+        typeDiv.appendChild(h2);
+
+        infoEditor.appendChild(typeDiv);
+        section.appendChild(infoEditor);
+
+        const defInput = document.createElement("div");
+        defInput.className = "div_def_input";
+
+        const inputMot = document.createElement("input");
+        inputMot.type = "text";
+        inputMot.id = "mot";
+        inputMot.placeholder = "Mot à définir";
+        inputMot.value = mot;
+
+        const editor = document.createElement("div");
+        editor.className = "editor";
+        editor.id = "definition";
+        editor.setAttribute("contenteditable", "true");
+        editor.setAttribute("data-placeholder", "Définition");
+        editor.innerHTML = content;
+
+        const headerEditorTxt = document.createElement("div");
+        headerEditorTxt.className = "div_header_editor_txt";
+
+        const deleteButton = document.createElement("button");
+        deleteButton.id = "suprim2";
+        deleteButton.textContent = "Supprimer";
+        deleteButton.addEventListener("click", () => {
+            section.remove();
+            document.querySelector(`[id_def_fiche="${id}"]`).remove();
+            localStorage.removeItem("editorContentDef_" + id);
+            localStorage.removeItem("editorMotDef_" + id);
+        });
+        headerEditorTxt.appendChild(deleteButton);
+
+
+
+        defInput.appendChild(inputMot);
+        defInput.appendChild(editor);
+        section.appendChild(headerEditorTxt);
+        section.appendChild(defInput);
+
+        document.getElementsByClassName("div_editor_section_main")[0].appendChild(section);
+
+        // ajout de l'espace définition dans la fiche
+        const div_fiche = document.getElementsByClassName("div_fiche")[0];
+        let div_def = document.createElement("div");
+        div_def.className = "div_def_fiche";
+        div_def.setAttribute("id_def_fiche", id);
+        if (mot) {
+            div_def.innerHTML = `<strong>${mot}:</strong><br>${content}`;
+        } else {
+            div_def.innerHTML = `${content}`;
+        }
+        div_fiche.appendChild(div_def);
+
+        // modification de la fiche en fonction de l'éditeur
+        editor.addEventListener("input", () => {
+            div_def.innerHTML = `<strong>${inputMot.value}:</strong> ${editor.innerHTML}`;
+            localStorage.setItem("editorContentDef_" + id, editor.innerHTML);
+            localStorage.setItem("editorMotDef_" + id, inputMot.value);
+        });
+
+        inputMot.addEventListener("input", () => {
+            div_def.innerHTML = `<strong>${inputMot.value}:</strong> ${editor.innerHTML}`;
+            localStorage.setItem("editorMotDef_" + id, inputMot.value);
+        });
+
+        liste_key_local_storage.push("editorContentDef_" + id);
+        liste_key_local_storage.push("editorMotDef_" + id);
+    }
+
+    //chargement des éditeurs sauvegardés
+    for (let i = 0; i < parseInt(id) + 1; i++) {
+        const savedContent = localStorage.getItem("editorContent_" + i);
+        if (savedContent) {
+            let important = localStorage.getItem("editorImportant_" + i);
+            important = parseInt(important);
+            createEditorTexte(i, savedContent, important);
+        }
+        const savedContentTitre = localStorage.getItem("editorContentTitre_" + i);
+        if (savedContentTitre) {
+            let type = localStorage.getItem("editorTypeTitre_" + i);
+            createEditorTitre(i, savedContentTitre, type);
+        }
+        const savedMotDef = localStorage.getItem("editorMotDef_" + i);
+        if (savedMotDef) {
+            let content = localStorage.getItem("editorContentDef_" + i);
+            if (!content) {
+                content = "";
+            }
+            createEditorDefinition(i, savedMotDef, content);
+        }
+
+    }
+
+
+    function update(){
+        let div_fiche = document.querySelector(".div_fiche");
+        let children = div_fiche.children;
+        let consecutiveDivDefFicheCount = 0;
+        let last_div_def_fiche = null;
+
+        for (let i = 0; i < children.length; i++) {
+            if (children[i].classList.contains("div_def_fiche")) {
+                consecutiveDivDefFicheCount++;
+                if (consecutiveDivDefFicheCount == 2) {
+                    last_div_def_fiche.classList.add("first");
+                    children[i].classList.remove("first");
+                }else if (consecutiveDivDefFicheCount == 1) {
+                    children[i].classList.add("first");
+                }
+                last_div_def_fiche = children[i];
+            } else {
+                consecutiveDivDefFicheCount = 0;
+                last_div_def_fiche = null;
+            }
+        }
+    }
+
+    document.addEventListener("input", () => {
+        update()
+    });
+    update()
+
+
+
+    async function save(id, inner_html, local_storage) {
+        const response = await fetch("http://localhost:3000/save", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ id, inner_html, local_storage }),
+        });
+        const data = await response.json();
+        if (response.ok) {
+            console.log(data);
+        } else if (response.status === 401) {
+            document.open();
+            document.write(data);
+            document.close();
+        }
+    }
+
+    document.getElementsByClassName("btn_save_div")[0].addEventListener("click", () => {
+        const params = new URLSearchParams(window.location.search);
+        let id = params.get("id");
+        let div_fiche = document.querySelector(".div_fiche_main");
+        // Récupérer toutes les données du localStorage
+        
+        let local_storage = "";
+        for (let i = 0; i < liste_key_local_storage.length; i++) {
+            let key = liste_key_local_storage[i];
+            let value = localStorage.getItem(key);
+            if (value) {
+                local_storage += key + "=" + value + ";";
+            }
+        }
+        save(id, div_fiche.innerHTML, local_storage);
+    });
+
+</script>
+
+</html>

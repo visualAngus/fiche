@@ -1,0 +1,11 @@
+.fiche_home_div{
+    height:400px;
+    width:300px;
+    overflow: hidden;
+
+    position: relative;
+
+    font-size: 0.5em;
+    
+    cursor: pointer;
+}

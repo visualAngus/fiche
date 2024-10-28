@@ -1,0 +1,134 @@
+.div_fiche h1{
+    font-family: "Oregano", cursive;
+    font-weight: 700;
+    font-style: normal;
+    font-size: 2.63em;
+
+    width: 100%;
+    text-align: center;
+    margin-bottom: 5px;
+}
+
+.div_titre_fiche.titre1{
+    width: 100%;
+    text-align: center;
+    font-family: "Itim", cursive;
+    font-weight: 700;
+    font-style: normal;
+    font-size: 2em;
+    margin-bottom: 5px;
+    text-decoration: underline;
+
+}
+.div_titre_fiche.titre2{
+    width: 100%;
+    text-align: center;
+    font-family: "Itim", cursive;
+    font-weight: 700;
+    font-style: normal;
+    font-size: 1.7em;
+    margin-bottom: 5px;
+    text-decoration: underline;
+
+}
+.div_titre_fiche.titre3{
+    width: 100%;
+    text-align: center;
+    font-family: "Itim", cursive;
+    font-weight: 700;
+    font-style: normal;
+    font-size: 1.45em;
+    margin-bottom: 5px;
+    text-decoration: underline;
+
+}
+.div_titre_fiche.titre4{
+    width: 100%;
+    text-align: center;
+    font-family: "Itim", cursive;
+    font-weight: 700;
+    font-style: normal;
+    font-size: 1.33em;
+    margin-bottom: 5px;
+    text-decoration: underline;
+
+}
+.div_titre_fiche.titre5{
+    font-family: "Itim", cursive;
+    font-weight: 700;
+    font-style: normal;
+    font-size: 1.33em;
+    margin-bottom: 5px;
+    text-decoration: underline;
+
+}
+.div_titre_fiche.titre6{
+    font-family: "Itim", cursive;
+    font-weight: 600;
+    font-style: normal;
+    font-size: 1.11em;
+    margin-bottom: 5px;
+    text-decoration: underline;
+}
+.div_titre_fiche.normal{
+    font-family: "Itim", cursive;
+    font-weight: 500;
+    font-style: normal;
+    font-size: 1em;
+    margin-bottom: 5px;
+    text-decoration: underline;
+}
+
+
+
+/* def */
+.div_def_fiche.first{
+    position: relative;
+    margin-top: 2.8em;
+}
+
+.div_def_fiche.first::before{
+    content: "Définition";
+
+    font-family: "Nerko One", cursive;
+    font-weight: 400;
+    font-style: normal;
+
+
+    font-size: 2em;
+    margin-bottom: 5px;
+    text-decoration: underline;   
+    text-decoration-color: var(--texte-low-constrast);
+    color: var(--texte-low-constrast); 
+
+    position: absolute;
+    transform: translateY(-100%) translateX(10px);
+}
+
+/* txt */
+
+.div_txt_fiche{
+    margin-top: 1em;
+}
+.div_txt_fiche.important{
+    position: relative;
+    margin-top: 1.5em;
+    margin-bottom: 2em;
+}
+.div_txt_fiche.important::before {
+    position: absolute;
+    top: 0px;
+    z-index: -1;
+    right: 0px;
+    opacity: 0.7;
+    background: url(/img/tache2.png);
+    content: " ";
+    width: 105%;
+    height: 130%;
+    min-height: 80px;
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    transform: translateY(calc(-5% - 10px));
+    filter:brightness(0.6);
+
+}
