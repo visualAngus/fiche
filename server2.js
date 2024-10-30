@@ -16,7 +16,16 @@ const saltRounds = 10;
 const SECRET_KEY = "rsdquhkdhv,;d620aqc2dqs65azckjej:ùmm^fùs^fsdù:sfq*ùdf:s";
 
 app.get('/', (req, res) => {
-    // Envoie 'index.html' situé dans le dossier home vers le client
+    //verifie si le token est présent
+    const token = req.cookies.token;
+    if (token) {
+        const data = verifyToken(token);
+        if (data) {
+            // Si le token est valide, redirige l'utilisateur vers la page d'accueil
+            return res.sendFile(path.join(__dirname, './home/home.html'));
+        }
+    }
+        // Envoie 'index.html' situé dans le dossier home vers le client
     res.sendFile(path.join(__dirname, './connexion/connexion.html'));
 
 });
@@ -459,6 +468,10 @@ app.get('/editor', (req, res) => {
     res.cookie('token', token, { maxAge: 3600000, sameSite: 'Lax' });
 
     res.sendFile(path.join(__dirname, './fiche_editor/editor.html'));
+});
+
+app.get('/header', (req, res) => {
+    res.sendFile(path.join(__dirname, './header/header.html'));
 });
 
 async function hashPassword(password) {

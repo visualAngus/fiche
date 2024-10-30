@@ -3,32 +3,49 @@
     padding: 0;
     box-sizing: border-box;
 }
+
 body {
     background-color: var(--large-background-color);
-
+    overflow: hidden;
 }
-main{
-    padding: 0;
+
+main {
+    padding: 0 ;
     display: flex;
-    flex-direction: column;
+    flex-direction: column !important;
     justify-content: flex-start;
     align-items: center;
+    padding-left: 0 !important;
+
 }
-.fiche_home_div{
-    height:400px;
-    width:300px;
+
+.div_chargement_home {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100dvh;
+    width: 100%;
+    background-color: #fff;
+    
+    position: absolute;
+    z-index: 100;
+}
+
+.fiche_home_div {
+    height: 400px;
+    width: 300px;
     overflow: hidden;
 
     position: relative;
 
     font-size: 0.5em;
-    
+
     cursor: pointer;
 
     z-index: 5;
 }
 
-.div_fiches{
+.div_fiches {
     display: flex;
     flex-wrap: wrap;
     flex-direction: row;
@@ -40,6 +57,7 @@ main{
 
     padding: 20px;
     padding-top: 60px;
+    margin-left: 20px;
 
     border-radius: 20px;
     background-color: #fff;
@@ -49,7 +67,8 @@ main{
 
     overflow: auto;
 }
-.div_fiches::before{
+
+.div_fiches::before {
     font-family: "Oregano", cursive;
     content: "Mes fiches";
     position: absolute;
@@ -60,4 +79,77 @@ main{
 
     font-size: 3em;
     font-weight: 700;
+}
+
+
+/* chargement */
+svg {
+    width: 3.25em;
+    transform-origin: center;
+    animation: rotate4 2s linear infinite;
+    display: block !important;
+}
+
+circle {
+    fill: none;
+    stroke: var(--contrast-color);
+    stroke-width: 4;
+    stroke-dasharray: 1, 200;
+    stroke-dashoffset: 0;
+    stroke-linecap: round;
+    animation: dash4 1.5s ease-in-out infinite;
+}
+
+@keyframes rotate4 {
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes dash4 {
+    0% {
+        stroke-dasharray: 1, 200;
+        stroke-dashoffset: 0;
+    }
+
+    50% {
+        stroke-dasharray: 90, 200;
+        stroke-dashoffset: -35px;
+    }
+
+    100% {
+        stroke-dashoffset: -125px;
+    }
+}
+
+
+.div_creation{
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 20px;
+
+    width: 100%;
+    height: 40px;
+    padding-left: 5%;
+
+}
+#fiche_title{
+    width: 300px;
+    height: 40px;
+    padding: 10px;
+    border-radius: 10px;
+    border: none;
+    outline: none;
+}
+#btn_create_liste{
+    width: 100px;
+    height: 40px;
+    border: none;
+    border-radius: 10px;
+    background-color: #fff;
+    color: black;
+    font-weight: 700;
+    cursor: pointer;
+    outline: none;
 }

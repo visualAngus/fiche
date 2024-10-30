@@ -7,7 +7,7 @@
     <title>Fiche</title>
     <link rel="stylesheet" href="/css/fiche_editor.css" />
     <link rel="stylesheet" href="/css/style_txt_fiche.css" />
-
+    <link rel="stylesheet" href="/css/style_header.css" />
 
     <!-- font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,7 +16,9 @@
         href="https://fonts.googleapis.com/css2?family=Courgette&family=Itim&family=Nerko+One&family=Oregano:ital@0;1&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap"
         rel="stylesheet">
 </head>
+<header>
 
+</header>
 <body>
     <div class="div_notification">
         <h2></h2>
@@ -202,11 +204,6 @@
             selection.anchorNode.parentNode.dispatchEvent(event);
         }
     }
-
-
-    document.getElementById("titre_fiche").textContent = localStorage.getItem("titre_fiche") || "Titre";
-    document.getElementById("Titre_main").value = localStorage.getItem("titre_fiche") || "Titre";
-    liste_key_local_storage.push("titre_fiche");
 
     document.getElementsByClassName("div_titre_editor")[0].addEventListener("input", () => {
         document.getElementById("titre_fiche").textContent = document.getElementById("Titre_main").value;
@@ -851,8 +848,6 @@
         if (response.ok) {
             if (!automatic) {
             notif_txt("Sauvegarde en cours...");
-            } else {
-                notif_txt("Sauvegarde automatique");
             }
             is_changed = false;
             console.log(data);
@@ -962,6 +957,11 @@
             }
         }
         update();
+
+        document.getElementById("titre_fiche").textContent = localStorage.getItem("titre_fiche");
+        document.getElementById("Titre_main").value = localStorage.getItem("titre_fiche");
+        liste_key_local_storage.push("titre_fiche");
+        
         document.querySelectorAll(".div_loader").forEach((elem) => {
             elem.remove();
         });
@@ -1001,6 +1001,22 @@
             div_notif.style.transform = "translateX(50%) translateY(-410px)";
         }, 2000);
     }
+    
+    async function get_header() {
+        const response = await fetch("http://192.168.1.74:3000/header", {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            });
+            const data = await response.text();
+            if (response.ok) {
+                document.querySelector("header").innerHTML = data;
+            } else if (response.status === 401) {
+                document.querySelector("header").innerHTML = data;
+            }
+    }
+    get_header();
 
     function notif_permant_show(txt) {
         let div_notif = document.querySelector(".div_notification");
@@ -1035,7 +1051,7 @@
         }
         let div_fiche = document.querySelector(".div_fiche_main");
         save(id, div_fiche.innerHTML, local_storage, true);
-    }, 60000);
+    }, 10000);
 
     setInterval(() => {
         if (!is_charged) {
@@ -1057,8 +1073,6 @@
         }
 
     }, 1000);
-</script>
-<script>
 </script>
 
 </html>
