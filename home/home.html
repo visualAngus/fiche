@@ -20,12 +20,17 @@
 </head>
 
 <body>
-<button onclick="getFiche()">Get fiche</button>
+<button onclick="createFiche()">Create fiche</button>
+<main>
+    <div class="div_fiches">
+
+    </div>
+</main>
 </body>
 <script>
-
+    history.pushState(null, "", "/");
     async function openFicheEditor(id) {
-        const response = await fetch("http://localhost:3000/editor", {
+        const response = await fetch("http://192.168.1.74:3000/editor", {
             method: "GET",
             headers: {
                 "Content-Type": "application/json"
@@ -33,6 +38,7 @@
         });
         const data = await response.text();
         if (response.ok) {
+            localStorage.clear();
             document.open();
             document.write(data);
             document.close();
@@ -47,39 +53,18 @@
         
     }
 
-
-    async function openFiche(id) {
-        const response = await fetch("http://localhost:3000/getData", {
+    async function createFiche() {
+        const response = await fetch("http://192.168.1.74:3000/createFiche", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ id }),
+            body: JSON.stringify({ titre: "Philo2" })
         });
-        const data = await response.json();
-        if (response.ok) {
-            //supression de tout localstorage
-            localStorage.clear();
-            //ajout de la fiche dans le localstorage
-            let fiche = data.data;
-            let local_storage = fiche.local_storage;
-            local_storage = local_storage.split(";");
-            for (let i = 0; i < local_storage.length; i++) {
-                let key = local_storage[i].split('=')[0];
-                let value = local_storage[i].split('=')[1];
-                localStorage.setItem(key, value);
-            }
-            openFicheEditor(id);
-        } else if (response.status === 401) {
-            document.open();
-            document.write(data);
-            document.close();
-        }
-    }
-
+    }   
 
     async function getFiche() {
-        const response = await fetch("http://localhost:3000/getFiche", {
+        const response = await fetch("http://192.168.1.74:3000/getAllFicheByUser", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -87,19 +72,26 @@
         });
         const data = await response.json();
         if (response.ok) {
+            console.log(data);
             if (data.success) {
-                let data_ = data.data;
-                for (let i = 0; i < data_.length; i++) {
-                    let fiche = data_[i].inner_html;
-                    let id = data_[i].id_fiche;
+                let Fiches = data.data;
+                for (let i = 0; i < Fiches.length; i++) {
+            
+                    let inner = Fiches[i].inner_html;
+
+                    if (inner.length ==0) {
+                        inner = "Pas de contenu";
+                    }
+
+                    let id = Fiches[i].fiche_id;
                     let div = document.createElement("div");
                     div.className = "fiche_home_div";
-                    div.setAttribute("fiche_home_id", id);
-                    div.innerHTML = fiche;
-                    document.body.appendChild(div);
+                    div.setAttribute("fiche_home_name", id);
+                    div.innerHTML = inner;
+                    document.querySelector('.div_fiches').appendChild(div);
 
                     div.addEventListener("click", function() {
-                        openFiche(id);
+                        openFicheEditor(id);
                     });
 
 
@@ -111,6 +103,7 @@
             document.close();
         }
     }
+    getFiche();
 </script>
 
 </html>

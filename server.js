@@ -46,8 +46,7 @@ connection.connect(function (err) {
 
 
 const saltRounds = 10;
-const SECRET_KEY = "rsdquhkdhv,;d620aqc2dqs65azckjej:ùmm^fùs^fsdù:sfq*ùdf:s"
-
+const SECRET_KEY = "rsdquhkdhv,;d620aqc2dqs65azckjej:ùmm^fùs^fsdù:sfq*ùdf:s";
 
 
 app.post('/register', async (req, res) => {
@@ -91,7 +90,7 @@ app.post('/login', async (req, res) => {
 
                 // Mettre le token dans un cookie HTTP
                 res.cookie('token', token, { maxAge: 3600000, sameSite: 'Lax' });
-                res.cookie('username', username, { maxAge: 3600000, sameSite: 'Lax' });
+                res.cookie('username', username, { maxAge: 36000000, sameSite: 'Lax' });
 
                 // Redirige l'utilisateur vers la page d'accueil
                 return res.sendFile(path.join(__dirname, './home/home.html'));
@@ -117,6 +116,7 @@ app.post('/getFiche', (req, res) => {
         return res.status(401).sendFile(path.join(__dirname, './connexion/connexion.html'));
     }
     
+    res.cookie('token', token, { maxAge: 3600000, sameSite: 'Lax' });
 
     connection.query('SELECT * FROM fiche', (error, results) => {
         if (error) {
@@ -145,6 +145,7 @@ app.post('/getData', (req, res) => {
     if (!data) {
         return res.status(401).sendFile(path.join(__dirname, './connexion/connexion.html'));
     }
+    res.cookie('token', token, { maxAge: 3600000, sameSite: 'Lax' });
 
     const { id } = req.body;
     console.log(id);
@@ -174,19 +175,22 @@ app.get('/editor', (req, res) => {
         return res.status(401).sendFile(path.join(__dirname, './connexion/connexion.html'));
     }
     // Renvoyer la page editor.html avec les données de la fiche
+    res.cookie('token', token, { maxAge: 3600000, sameSite: 'Lax' });
+
     res.sendFile(path.join(__dirname, './fiche_editor/editor.html'));
 });
 
 app.post('/save', (req, res) => {
     // Vérifier le token
-    const token = req.cookies.token;
-    if (!token) {
-        return res.status(401).sendFile(path.join(__dirname, './connexion/connexion.html'));
-    }
-    const data = verifyToken(token);
-    if (!data) {
-        return res.status(401).sendFile(path.join(__dirname, './connexion/connexion.html'));
-    }
+    // const token = req.cookies.token;
+    // if (!token) {
+    //     return res.status(401).sendFile(path.join(__dirname, './connexion/connexion.html'));
+    // }
+    // const data = verifyToken(token);
+    // if (!data) {
+    //     return res.status(401).sendFile(path.join(__dirname, './connexion/connexion.html'));
+    // }
+    // res.cookie('token', token, { maxAge: 3600000, sameSite: 'Lax' });
 
     const { id, inner_html, local_storage } = req.body;
     if (!id || !inner_html || !local_storage) {
