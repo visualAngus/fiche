@@ -4,6 +4,7 @@ const path = require('path');
 const mysql = require('mysql');
 const bcrypt = require('bcrypt');
 const cookieParser = require('cookie-parser');
+const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -18,34 +19,21 @@ const SECRET_KEY = "rsdquhkdhv,;d620aqc2dqs65azckjej:ùmm^fùs^fsdù:sfq*ùdf:s"
 
 app.get('/', (req, res) => {
     //verifie si le token est présent
-    const token = req.cookies.token;
-    if (token) {
-        const data = verifyToken(token);
-        if (data) {
-            // Si le token est valide, redirige l'utilisateur vers la page d'accueil
-            return res.sendFile(path.join(__dirname, './home_fiche/home_fiche.html'));
-        }
+    if (!verificationAll(req)) {
+        return res.sendFile(path.join(__dirname, './connexion/connexion.html'));
     }
-        // Envoie 'index.html' situé dans le dossier home vers le client
-    res.sendFile(path.join(__dirname, './connexion/connexion.html'));
+    // Envoie 'index.html' situé dans le dossier home vers le client
+    res.sendFile(path.join(__dirname, './home_fiche/home_fiche.html'));
 
 });
 app.get('/home%20fiche', (req, res) => {
-    //verifie si le token est présent
-    const token = req.cookies.token;
-    if (token) {
-        const data = verifyToken(token);
-        if (data) {
-            // Si le token est valide, redirige l'utilisateur vers la page d'accueil
-            return res.sendFile(path.join(__dirname, './home_fiche/home_fiche.html'));
-        }
+    if (verificationAll(req) == false) {
+        return res.sendFile(path.join(__dirname, './connexion/connexion.html'));
     }
-        // Envoie 'index.html' situé dans le dossier home vers le client
-    res.sendFile(path.join(__dirname, './connexion/connexion.html'));
+    // Envoie 'index.html' situé dans le dossier home vers le client
+    res.sendFile(path.join(__dirname, './home_fiche/home_fiche.html'));
 
 });
-
-
 app.get('/connexion', (req, res) => {
     // Envoie 'index.html' situé dans le dossier home vers le client
     res.sendFile(path.join(__dirname, './connexion/connexion.html'));
@@ -55,7 +43,6 @@ app.get('/slider', (req, res) => {
     // Envoie 'index.html' situé dans le dossier home vers le client
     res.sendFile(path.join(__dirname, './slider/slider.html'));
 });
-
 // Configuration MySQL
 const connection = mysql.createConnection({
     host: 'localhost',
@@ -63,7 +50,6 @@ const connection = mysql.createConnection({
     password: '',
     database: 'fiche'
 });
-
 connection.connect(function (err) {
     if (err) {
         console.error('error connecting: ' + err.stack);
@@ -71,7 +57,6 @@ connection.connect(function (err) {
     }
     console.log('connected as id ' + connection.threadId);
 });
-
 // Création des tables principales
 const initDatabase = async () => {
     // Table pour stocker les métadonnées des fiches
@@ -104,7 +89,6 @@ const initDatabase = async () => {
         console.error('Erreur lors de la création des tables:', error);
     }
 };
-
 // Fonction pour créer une table spécifique pour une fiche
 const createFicheTable = async (tableName) => {
     const createTableQuery = `
@@ -113,10 +97,14 @@ const createFicheTable = async (tableName) => {
             inner_html TEXT,
             local_storage TEXT,
             date_modification TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            commentaire VARCHAR(255)
+            commentaire VARCHAR(255),
+            iv_inner VARCHAR(255),
+            authTag_inner VARCHAR(255),
+            iv_local VARCHAR(255),
+            authTag_local VARCHAR(255)
         )
     `;
-    
+
     return new Promise((resolve, reject) => {
         connection.query(createTableQuery, (error) => {
             if (error) reject(error);
@@ -124,21 +112,20 @@ const createFicheTable = async (tableName) => {
         });
     });
 };
-
 // Route pour créer une nouvelle fiche
 app.post('/createFiche', async (req, res) => {
     const token = req.cookies.token;
-    if (!token) {
-        return res.status(401).json({ error: 'Non authentifié' });
+    if (verificationAll(req) == false) {
+        return res.sendFile(path.join(__dirname, './connexion/connexion.html'));
     }
-    
+
     const userData = verifyToken(token);
     if (!userData) {
         return res.status(401).json({ error: 'Token invalide' });
     }
 
     const { titre } = req.body;
-    
+
     try {
         const createFicheResult = await new Promise((resolve, reject) => {
             const tableName = `fiche_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
@@ -158,8 +145,8 @@ app.post('/createFiche', async (req, res) => {
         // Insérer la première version vide dans la table de la fiche
         await new Promise((resolve, reject) => {
             connection.query(
-                `INSERT INTO ${createFicheResult.tableName} (inner_html, local_storage, commentaire) VALUES (?, ?, ?)`,
-                ['', '', 'Version initiale'],
+                `INSERT INTO ${createFicheResult.tableName} (inner_html, local_storage, commentaire,iv_inner,authTag_inner,iv_local,authTag_local) VALUES (?, ?, ?,?,?,?,?)`,
+                ['', '', 'Version initiale', '', '', '', ''],
                 (error, results) => {
                     if (error) reject(error);
                     resolve(results);
@@ -179,24 +166,23 @@ app.post('/createFiche', async (req, res) => {
             );
         });
 
-        res.json({ 
-            success: true, 
+        res.json({
+            success: true,
             ficheId: createFicheResult.results.insertId,
-            message: 'Fiche créée avec succès' 
+            message: 'Fiche créée avec succès'
         });
     } catch (error) {
         console.error('Erreur lors de la création de la fiche:', error);
         res.status(500).json({ error: 'Erreur lors de la création de la fiche' });
     }
 });
-
 // Route modifiée pour sauvegarder une version de la fiche
 app.post('/save', async (req, res) => {
-    const token = req.cookies.token;
-    if (!token) {
-        return res.status(401).json({ error: 'Non authentifié' });
+    if (verificationAll(req) == false) {
+        return res.sendFile(path.join(__dirname, './connexion/connexion.html'));
     }
-    
+    const token = req.cookies.token;
+    const secondaryKey = Buffer.from(req.cookies.secondaryKey, 'hex');
     const userData = verifyToken(token);
     if (!userData) {
         return res.status(401).json({ error: 'Token invalide' });
@@ -204,8 +190,10 @@ app.post('/save', async (req, res) => {
 
     // si le token est bon, mettre à jourt le token chez le client pour une durée de 1h
     res.cookie('token', token, { maxAge: 3600000, sameSite: 'Lax' });
-
     const { id, inner_html, local_storage, commentaire = 'Mise à jour' } = req.body;
+
+    let encryptedInnerHtml = encryptWithSecondaryKey(inner_html, secondaryKey);
+    let encryptedLocalStorage = encryptWithSecondaryKey(local_storage, secondaryKey);
 
     try {
         // Récupérer le nom de la table
@@ -228,8 +216,8 @@ app.post('/save', async (req, res) => {
         // Insérer la nouvelle version
         await new Promise((resolve, reject) => {
             connection.query(
-                `INSERT INTO ${tableInfo[0].table_name} (inner_html, local_storage, commentaire) VALUES (?, ?, ?)`,
-                [inner_html, local_storage, commentaire],
+                `INSERT INTO ${tableInfo[0].table_name} (inner_html, local_storage, commentaire,iv_inner,authTag_inner,iv_local,authTag_local) VALUES (?, ?, ?,?,?,?,?)`,
+                [encryptedInnerHtml.encryptedData, encryptedLocalStorage.encryptedData, commentaire, encryptedInnerHtml.iv, encryptedInnerHtml.authTag, encryptedLocalStorage.iv, encryptedLocalStorage.authTag],
                 (error, results) => {
                     if (error) reject(error);
                     resolve(results);
@@ -252,14 +240,13 @@ app.post('/save', async (req, res) => {
         res.status(500).json({ error: 'Erreur lors de la sauvegarde' });
     }
 });
-
 // Route pour récupérer la dernière version d'une fiche
 app.post('/getData', async (req, res) => {
     const token = req.cookies.token;
-    if (!token) {
-        return res.status(401).json({ error: 'Non authentifié' });
+    if (verificationAll(req) == false) {
+        return res.sendFile(path.join(__dirname, './connexion/connexion.html'));
     }
-    
+
     const userData = verifyToken(token);
     if (!userData) {
         return res.status(401).json({ error: 'Token invalide' });
@@ -295,25 +282,28 @@ app.post('/getData', async (req, res) => {
             );
         });
 
-        res.json({ success: true, data: ficheData,info:tableInfo[0]});
+        let decryptedInnerHtml = decryptWithSecondaryKey(ficheData[0].inner_html, Buffer.from(req.cookies.secondaryKey, 'hex'), ficheData[0].iv_inner, ficheData[0].authTag_inner);
+        let decryptedLocalStorage = decryptWithSecondaryKey(ficheData[0].local_storage, Buffer.from(req.cookies.secondaryKey, 'hex'), ficheData[0].iv_local, ficheData[0].authTag_local);
+        ficheData[0].inner_html = decryptedInnerHtml;
+        ficheData[0].local_storage = decryptedLocalStorage;
+        res.json({ success: true, data: ficheData, info: tableInfo[0] });
     } catch (error) {
         console.error('Erreur lors de la récupération:', error);
         res.status(500).json({ error: 'Erreur lors de la récupération' });
     }
 });
-
 app.post('/UpdateGroupe', async (req, res) => {
     const token = req.cookies.token;
-    if (!token) {
-        return res.status(401).json({ error: 'Non authentifié' });
+    if (verificationAll(req) == false) {
+        return res.sendFile(path.join(__dirname, './connexion/connexion.html'));
     }
-    
+
     const userData = verifyToken(token);
     if (!userData) {
         return res.status(401).json({ error: 'Token invalide' });
     }
 
-    const { groupe_id,id___ } = req.body;
+    const { groupe_id, id___ } = req.body;
     try {
         // Récupérer le nom de la table
         const tableInfo = await new Promise((resolve, reject) => {
@@ -344,19 +334,18 @@ app.post('/UpdateGroupe', async (req, res) => {
             );
         });
 
-        res.json({ success: true, data: ficheData,info:tableInfo[0]});
+        res.json({ success: true, data: ficheData, info: tableInfo[0] });
     } catch (error) {
         console.error('Erreur lors de la récupération:', error);
         res.status(500).json({ error: 'Erreur lors de la récupération' });
     }
 });
-
 app.post('/AddGroupe', async (req, res) => {
     const token = req.cookies.token;
-    if (!token) {
-        return res.status(401).json({ error: 'Non authentifié' });
+    if (verificationAll(req) == false) {
+        return res.sendFile(path.join(__dirname, './connexion/connexion.html'));
     }
-    
+
     const userData = verifyToken(token);
     if (!userData) {
         return res.status(401).json({ error: 'Token invalide' });
@@ -368,14 +357,14 @@ app.post('/AddGroupe', async (req, res) => {
         const tableInfo = await new Promise((resolve, reject) => {
             connection.query(
                 `INSERT INTO groupe (nom_groupe,user_id) VALUES (?,?)`,
-                [groupe_name,userData.userID],
+                [groupe_name, userData.userID],
                 (error, results) => {
                     if (error) reject(error);
                     resolve(results);
                 }
             );
         });
-        res.json({ success: true, data: tableInfo});
+        res.json({ success: true, data: tableInfo });
     } catch (error) {
         console.error('Erreur lors de la récupération:', error);
         res.status(500).json({ error: 'Erreur lors de la récupération' });
@@ -384,10 +373,10 @@ app.post('/AddGroupe', async (req, res) => {
 // Route pour récupérer l'historique d'une fiche
 app.post('/getHistory', async (req, res) => {
     const token = req.cookies.token;
-    if (!token) {
-        return res.status(401).json({ error: 'Non authentifié' });
+    if (verificationAll(req) == false) {
+        return res.sendFile(path.join(__dirname, './connexion/connexion.html'));
     }
-    
+
     const userData = verifyToken(token);
     if (!userData) {
         return res.status(401).json({ error: 'Token invalide' });
@@ -426,18 +415,17 @@ app.post('/getHistory', async (req, res) => {
         res.status(500).json({ error: 'Erreur lors de la récupération de l\'historique' });
     }
 });
-
 app.post('/getAllFicheByUser', async (req, res) => {
     const token = req.cookies.token;
-    if (!token) {
-        return res.status(401).json({ error: 'Non authentifié' });
+    if (verificationAll(req) == false) {
+        return res.sendFile(path.join(__dirname, './connexion/connexion.html'));
     }
-    
+
     const userData = verifyToken(token);
     if (!userData) {
         return res.status(401).json({ error: 'Token invalide' });
     }
-    
+
     try {
         // D'abord, récupérer les informations de base des fiches
         const tablesInfo = await new Promise((resolve, reject) => {
@@ -447,7 +435,7 @@ app.post('/getAllFicheByUser', async (req, res) => {
                  LEFT JOIN fiches_meta ON user_fiches.fiche_id = fiches_meta.id_fiche
                  LEFT JOIN groupe ON fiches_meta.groupe_id = groupe.id_groupe AND groupe.user_id = ?
                  WHERE user_fiches.user_id = ?`,
-                [userData.userID,userData.userID],
+                [userData.userID, userData.userID],
                 (error, results) => {
                     if (error) reject(error);
                     resolve(results);
@@ -460,7 +448,7 @@ app.post('/getAllFicheByUser', async (req, res) => {
             try {
                 const content = await new Promise((resolve, reject) => {
                     connection.query(
-                        `SELECT inner_html, local_storage 
+                        `SELECT *
                          FROM ${fiche.table_name} 
                          ORDER BY version_id DESC 
                          LIMIT 1`,
@@ -470,11 +458,17 @@ app.post('/getAllFicheByUser', async (req, res) => {
                         }
                     );
                 });
+                let decryptedInnerHtml = content.inner_html;
+                let decryptedLocalStorage = content.local_storage;
 
+                if (content.iv_inner && content.authTag_inner && content.iv_local && content.authTag_local) {
+                    decryptedInnerHtml = decryptWithSecondaryKey(content.inner_html, Buffer.from(req.cookies.secondaryKey, 'hex'), content.iv_inner, content.authTag_inner);
+                    decryptedLocalStorage = decryptWithSecondaryKey(content.local_storage, Buffer.from(req.cookies.secondaryKey, 'hex'), content.iv_local, content.authTag_local);
+                }
                 return {
                     ...fiche,
-                    inner_html: content.inner_html,
-                    local_storage: content.local_storage
+                    inner_html: decryptedInnerHtml,
+                    local_storage: decryptedLocalStorage
                 };
             } catch (error) {
                 console.error(`Erreur pour la table ${fiche.table_name}:`, error);
@@ -487,8 +481,8 @@ app.post('/getAllFicheByUser', async (req, res) => {
             }
         }));
 
-        res.json({ 
-            success: true, 
+        res.json({
+            success: true,
             data: fichesWithContent,
             message: fichesWithContent.length === 0 ? 'Aucune fiche trouvée pour cet utilisateur' : undefined
         });
@@ -497,18 +491,17 @@ app.post('/getAllFicheByUser', async (req, res) => {
         res.status(500).json({ error: 'Erreur lors de la récupération' });
     }
 });
-
 app.post('/GetAllGroupeByUser', async (req, res) => {
     const token = req.cookies.token;
-    if (!token) {
-        return res.status(401).json({ error: 'Non authentifié' });
+    if (verificationAll(req) == false) {
+        return res.sendFile(path.join(__dirname, './connexion/connexion.html'));
     }
-    
+
     const userData = verifyToken(token);
     if (!userData) {
         return res.status(401).json({ error: 'Token invalide' });
     }
-    
+
     try {
         // D'abord, récupérer les informations de base des fiches
         const tablesInfo = await new Promise((resolve, reject) => {
@@ -522,8 +515,8 @@ app.post('/GetAllGroupeByUser', async (req, res) => {
             );
         });
 
-        res.json({ 
-            success: true, 
+        res.json({
+            success: true,
             data: tablesInfo,
             message: tablesInfo.length === 0 ? 'Aucun groupe trouvé pour cet utilisateur' : undefined
         });
@@ -532,13 +525,12 @@ app.post('/GetAllGroupeByUser', async (req, res) => {
         res.status(500).json({ error: 'Erreur lors de la récupération' });
     }
 });
-
 app.post('/getFicheById', async (req, res) => {
     const token = req.cookies.token;
-    if (!token) {
-        return res.status(401).json({ error: 'Non authentifié' });
+    if (verificationAll(req) == false) {
+        return res.sendFile(path.join(__dirname, './connexion/connexion.html'));
     }
-    
+
     const userData = verifyToken(token);
     if (!userData) {
         return res.status(401).json({ error: 'Token invalide' });
@@ -565,7 +557,7 @@ app.post('/getFicheById', async (req, res) => {
         // Récupérer le contenu de la fiche
         const content = await new Promise((resolve, reject) => {
             connection.query(
-                `SELECT inner_html, local_storage 
+                `SELECT *
                  FROM ${ficheInfo.table_name} 
                  ORDER BY version_id DESC 
                  LIMIT 1`,
@@ -575,13 +567,19 @@ app.post('/getFicheById', async (req, res) => {
                 }
             );
         });
+        let decryptedInnerHtml = content.inner_html;
+        let decryptedLocalStorage = content.local_storage;
 
-        res.json({ 
-            success: true, 
+        if (content.iv_inner && content.authTag_inner && content.iv_local && content.authTag_local) {
+            decryptedInnerHtml = decryptWithSecondaryKey(content.inner_html, Buffer.from(req.cookies.secondaryKey, 'hex'), content.iv_inner, content.authTag_inner);
+            decryptedLocalStorage = decryptWithSecondaryKey(content.local_storage, Buffer.from(req.cookies.secondaryKey, 'hex'), content.iv_local, content.authTag_local);
+        }
+        res.json({
+            success: true,
             data: {
                 ...ficheInfo,
-                inner_html: content.inner_html,
-                local_storage: content.local_storage
+                inner_html: decryptedInnerHtml,
+                local_storage: decryptedLocalStorage
             }
         });
     } catch (error) {
@@ -589,7 +587,6 @@ app.post('/getFicheById', async (req, res) => {
         res.status(500).json({ error: 'Erreur lors de la récupération' });
     }
 });
-
 app.post('/register', async (req, res) => {
     const { username, password } = req.body;
     const hash = await hashPassword(password);
@@ -598,19 +595,12 @@ app.post('/register', async (req, res) => {
         res.json({ success: true });
     });
 });
-
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
     // Vérifie si le token est déjà présent
-    const token = req.cookies.token;
-    if (token) {
-        const data = verifyToken(token);
-        if (data) {
-            // Si le token est valide, redirige l'utilisateur vers la page d'accueil
-            return res.sendFile(path.join(__dirname, './home_fiche/home_fiche.html'));
-        }
+    if (verificationAll(req)) {
+        return res.sendFile(path.join(__dirname, './home_fiche/home_fiche.html'));
     }
-
     try {
         // Récupère l'utilisateur depuis la base de données
         const results = await new Promise((resolve, reject) => {
@@ -625,9 +615,14 @@ app.post('/login', async (req, res) => {
             const isPasswordValid = await verifyPassword(password, hash);
             if (isPasswordValid) {
                 const token = generateToken(username, id);
+
+                //generate a secondary key
+                const secondaryKey = generateSecondaryKey(SECRET_KEY, password);
+
                 // Mettre le token dans un cookie HTTP
                 res.cookie('token', token, { maxAge: 3600000, sameSite: 'Lax' });
                 res.cookie('username', username, { maxAge: 36000000, sameSite: 'Lax' });
+                res.cookie('secondaryKey', secondaryKey.toString('hex'), { maxAge: 36000000, sameSite: 'Lax' });
 
                 // Redirige l'utilisateur vers la page d'accueil
                 return res.sendFile(path.join(__dirname, './home_fiche/home_fiche.html'));
@@ -635,17 +630,16 @@ app.post('/login', async (req, res) => {
                 res.status(401).json({ error: 'Invalid credentials', message: 'Utilisateur ou mot de passe incorrect' });
             }
         } else {
-            res.status(401).json({ error: 'Invalid credentials' , message: 'Utilisateur ou mot de passe incorrect'});
+            res.status(401).json({ error: 'Invalid credentials', message: 'Utilisateur ou mot de passe incorrect' });
         }
     } catch (error) {
         res.status(500).json({ error: 'Internal server error', message: 'Erreur lors de la connexion' });
     }
 });
-
 app.get('/editor', (req, res) => {
     const token = req.cookies.token;
-    if (!token) {
-        return res.status(401).sendFile(path.join(__dirname, './connexion/connexion.html'));
+    if (verificationAll(req) == false) {
+        return res.sendFile(path.join(__dirname, './connexion/connexion.html'));
     }
     const data = verifyToken(token);
     if (!data) {
@@ -658,8 +652,8 @@ app.get('/editor', (req, res) => {
 });
 app.get('/viewer', (req, res) => {
     const token = req.cookies.token;
-    if (!token) {
-        return res.status(401).sendFile(path.join(__dirname, './connexion/connexion.html'));
+    if (verificationAll(req) == false) {
+        return res.sendFile(path.join(__dirname, './connexion/connexion.html'));
     }
     const data = verifyToken(token);
     if (!data) {
@@ -684,6 +678,27 @@ async function verifyPassword(password, hash) {
     return match;
 }
 
+function verificationAll(req) {
+    // get le token 
+    const token = req.cookies.token;
+    //get la clé secondaire
+    const secondaryKey = req.cookies.secondaryKey;
+
+    if (!token) {
+        return false;
+    } else if (!secondaryKey) {
+        return false;
+    }
+
+    const data = verifyToken(token);
+    if (!data) {
+        return false;
+    }
+
+    return true;
+}
+
+
 // Fonction pour générer un token JWT
 function generateToken(name, id) {
     const payload = {
@@ -703,6 +718,39 @@ function verifyToken(token) {
         return null; // Retourne null si le token est invalide ou expiré
     }
 }
+
+// Fonction pour générer une clé secondaire à partir de la clé primaire et du mot de passe
+function generateSecondaryKey(primaryKey, password) {
+    const salt = crypto.createHash('sha256').update(primaryKey).digest('hex'); // Utiliser une valeur unique pour chaque clé primaire
+    return crypto.pbkdf2Sync(password, salt, 100000, 32, 'sha256'); // Génère une clé de 32 octets (256 bits)
+}
+
+// Fonction pour chiffrer le texte avec la clé secondaire
+function encryptWithSecondaryKey(text, secondaryKey) {
+    const iv = crypto.randomBytes(16); // Génère un IV aléatoire
+    const cipher = crypto.createCipheriv('aes-256-gcm', secondaryKey, iv);
+
+    let encrypted = cipher.update(text, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+    const authTag = cipher.getAuthTag().toString('hex'); // Tag pour vérifier l'intégrité du chiffrement
+
+    return {
+        iv: iv.toString('hex'),
+        encryptedData: encrypted,
+        authTag: authTag
+    };
+}
+
+// Fonction pour déchiffrer le texte avec la clé secondaire
+function decryptWithSecondaryKey(encryptedData, secondaryKey, iv, authTag) {
+    const decipher = crypto.createDecipheriv('aes-256-gcm', secondaryKey, Buffer.from(iv, 'hex'));
+    decipher.setAuthTag(Buffer.from(authTag, 'hex'));
+
+    let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
+}
+
 
 app.listen(PORT, () => {
     console.log(`Serveur démarré sur http://localhost:${PORT}`);

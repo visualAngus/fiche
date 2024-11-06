@@ -663,6 +663,11 @@ function update() {
     let last_div_def_fiche = null;
     let liste_def = [];
 
+    if (id < children.length+1) {
+        id = children.length+1;
+        localStorage.setItem("nb_editor", id);
+    }
+
     for (let i = 0; i < children.length; i++) {
         if (children[i].classList.contains("div_def_fiche")) {
             consecutiveDivDefFicheCount++;
@@ -792,7 +797,7 @@ async function save(id, inner_html, local_storage, automatic = false) {
         commentaire = "Sauvegarde automatique";
     }
 
-    const response = await fetch("http://88.166.208.243:3000/save", {
+    const response = await fetch("/save", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -812,7 +817,7 @@ async function save(id, inner_html, local_storage, automatic = false) {
         document.body.style.pointerEvents = 'none';
         notif_permant_show("Vous devez vous connecter pour sauvegarder");
         // ouvre un nouvel onglet avec la page de login
-        let newTab = window.open("http://88.166.208.243:3000/connexion", "_blank");
+        let newTab = window.open("/connexion", "_blank");
         newTab.focus();
 
         const intervalId = setInterval(() => {
@@ -859,7 +864,7 @@ document.getElementsByClassName("btn_save_div")[0].addEventListener("click", () 
 async function LoadFiche() {
     const params = new URLSearchParams(window.location.search);
     let id = params.get("id");
-    const response = await fetch("http://88.166.208.243:3000/getData", {
+    const response = await fetch("/getData", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -868,6 +873,7 @@ async function LoadFiche() {
     });
     const data = await response.json();
     if (response.ok) {
+        console.log(data);
         //supression de tout localstorage
         localStorage.clear();
         // ajout de la fiche dans le localstorage
@@ -893,6 +899,7 @@ async function LoadFiche() {
 
     id = localStorage.getItem("nb_editor") || 0;
     for (let i = 0; i < parseInt(id) + 1; i++) {
+        console.log(i);
         const savedContent = localStorage.getItem("editorContent_" + i);
         if (savedContent) {
             let important = localStorage.getItem("editorImportant_" + i);
@@ -928,6 +935,7 @@ async function LoadFiche() {
         for (let j = 0; j < parseInt(id) + 1; j++) {
             const savedColor = localStorage.getItem("titreColordefGroup_" + j);
             if (savedColor) {
+                console.log(savedColor);
                 Change_title_color(savedColor, "defGroup_" + j);
             }
             const savedEmportant = localStorage.getItem("titreEmportantdefGroup_" + j);
@@ -990,7 +998,7 @@ function notif_txt(txt) {
 }
 
 async function get_header() {
-    const response = await fetch("http://88.166.208.243:3000/header", {
+    const response = await fetch("/header", {
         method: "GET",
         headers: {
             "Content-Type": "application/json"

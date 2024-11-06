@@ -128,7 +128,7 @@
 
     // Fonction pour récupérer les différent groupes de fiche
     async function getGroup() {
-        const response = await fetch("http://88.166.208.243:3000/GetAllGroupeByUser", {
+        const response = await fetch("/GetAllGroupeByUser", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -171,7 +171,7 @@
                     return;
                 }
                 console.log(groupe_name);
-                const response = fetch("http://88.166.208.243:3000/AddGroupe", {
+                const response = fetch("/AddGroupe", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"
@@ -198,7 +198,7 @@
                             let id___ = url.searchParams.get("id");
                             console.log(groupe_id);
                             console.log(id___);
-                            const response = fetch("http://88.166.208.243:3000/UpdateGroupe", {
+                            const response = fetch("/UpdateGroupe", {
                                 method: "POST",
                                 headers: {
                                     "Content-Type": "application/json"
@@ -221,7 +221,7 @@
             let url = new URL(window.location.href);
             let id___ = url.searchParams.get("id");
             console.log(groupe_id);
-            const response = fetch("http://88.166.208.243:3000/UpdateGroupe", {
+            const response = fetch("/UpdateGroupe", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
