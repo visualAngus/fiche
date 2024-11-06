@@ -78,7 +78,7 @@
         });
     }
     async function openFicheViewer(id) {
-        const response = await fetch("http://192.168.1.74:3000/viewer", {
+        const response = await fetch("http://192.168.1.66:3000/viewer", {
             method: "GET",
             headers: {
                 "Content-Type": "application/json"
@@ -101,7 +101,7 @@
     }
 
     async function openFicheEditor(id) {
-        const response = await fetch("http://192.168.1.74:3000/editor", {
+        const response = await fetch("http://192.168.1.66:3000/editor", {
             method: "GET",
             headers: {
                 "Content-Type": "application/json"
@@ -128,7 +128,7 @@
         if (titre.length == 0) {
             titre = "Sans titre";
         }
-        const response = await fetch("http://192.168.1.74:3000/createFiche", {
+        const response = await fetch("http://192.168.1.66:3000/createFiche", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -144,7 +144,7 @@
         }
     }
     async function getFiche() {
-        const response = await fetch("http://192.168.1.74:3000/getAllFicheByUser", {
+        const response = await fetch("http://192.168.1.66:3000/getAllFicheByUser", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -228,7 +228,7 @@
     }
     getFiche();
     async function get_header() {
-        const response = await fetch("http://192.168.1.74:3000/header", {
+        const response = await fetch("http://192.168.1.66:3000/header", {
             method: "GET",
             headers: {
                 "Content-Type": "application/json"
