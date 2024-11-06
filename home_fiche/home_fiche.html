@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home</title>
+    <link rel="stylesheet" href="/css/style_home.css" />
+    <link rel="stylesheet" href="/css/fiche_editor.css" />
+    <link rel="stylesheet" href="/css/style_txt_fiche.css" />
+    <link rel="stylesheet" href="/css/style_header.css" />
+
+
+    <!-- font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Courgette&family=Itim&family=Nerko+One&family=Oregano:ital@0;1&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap"
+        rel="stylesheet">
+
+</head>
+
+<body>
+    <div class="div_chargement_home">
+        <svg viewBox="25 25 50 50" style="display: none;">
+            <circle r="20" cy="50" cx="50"></circle>
+        </svg>
+    </div>
+    <header>
+
+    </header>
+    <div class="bulle">
+        <button class="btn_bulle_edit"">Editer</button>
+        <button class=" btn_bulle_lecture"">Lire</button>
+    </div>
+    <main>
+        <div class="div_creation">
+            <input type="text" id="fiche_title" placeholder="Titre de la fiche">
+            <button id="btn_create_liste" onclick="createFiche()">Create fiche</button>
+            
+        </div>
+        <div class="div_fiches"></div>
+        <div class="div_groupe_main"></div>
+
+    </main>
+</body>
+<script>
+    history.pushState(null, "", "/home fiche");
+
+    function show_bulle(event, id) {
+        
+        let bulle = document.querySelector(".bulle");
+        
+        if (bulle.classList.contains("show_bulle")) {
+            bulle.style.animation = "hide_bulle 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards";
+            setTimeout(() => {
+                bulle.style.display = "flex";
+                bulle.classList.add("show_bulle");
+                bulle.style.top = event.clientY+window.scrollY + "px";
+                bulle.style.left = event.clientX + "px";
+                bulle.style.animation = "show_bulle 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards";
+            }, 100);
+            return;
+        }
+
+        // deplacer la bulle vers la souris
+        bulle.style.display = "flex";
+        bulle.classList.add("show_bulle");
+        bulle.style.top = event.clientY+window.scrollY  + "px";
+        bulle.style.left = event.clientX + "px";
+        bulle.style.animation = "show_bulle 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards";
+
+        bulle.querySelector(".btn_bulle_edit").addEventListener("click", function () {
+            openFicheEditor(id);
+        });
+        bulle.querySelector(".btn_bulle_lecture").addEventListener("click", function () {
+            openFicheViewer(id);
+        });
+    }
+    async function openFicheViewer(id) {
+        const response = await fetch("http://192.168.1.74:3000/viewer", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        });
+        const data = await response.text();
+        if (response.ok) {
+            localStorage.clear();
+            document.open();
+            document.write(data);
+            document.close();
+
+            // modifier l'url
+            history.pushState(null, "", "/viewer?fiche_id=" + id);
+        } else if (response.status === 401) {
+            document.open();
+            document.write(data);
+            document.close();
+        }
+    }
+
+    async function openFicheEditor(id) {
+        const response = await fetch("http://192.168.1.74:3000/editor", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        });
+        const data = await response.text();
+        if (response.ok) {
+            localStorage.clear();
+            document.open();
+            document.write(data);
+            document.close();
+
+            // modifier l'url
+            history.pushState(null, "", "/editor?id=" + id);
+        } else if (response.status === 401) {
+            document.open();
+            document.write(data);
+            document.close();
+        }
+
+    }
+    async function createFiche() {
+        let titre = document.getElementById("fiche_title").value;
+        if (titre.length == 0) {
+            titre = "Sans titre";
+        }
+        const response = await fetch("http://192.168.1.74:3000/createFiche", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ titre: titre })
+        });
+        const data = await response.json();
+        if (response.ok) {
+            console.log(data);
+            if (data.success) {
+                openFicheEditor(data.id);
+            }
+        }
+    }
+    async function getFiche() {
+        const response = await fetch("http://192.168.1.74:3000/getAllFicheByUser", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        });
+        const data = await response.json();
+        document.querySelector('.div_fiches').innerHTML = "";
+        if (response.ok) {
+            console.log(data);
+            if (data.success) {
+                let Fiches = data.data;
+                for (let i = 0; i < Fiches.length; i++) {
+                    console.log(Fiches[i]);
+                    let inner = Fiches[i].inner_html;
+
+                    if (inner.length == 0) {
+                        inner = "Pas de contenu";
+                    }
+
+                    let id = Fiches[i].fiche_id;
+                    let div = document.createElement("div");
+                    div.className = "fiche_home_div";
+                    div.setAttribute("fiche_home_name", id);
+                    div.innerHTML = inner;
+                    div.addEventListener("click", function (event) {
+                        show_bulle(event, id);
+                    });
+
+                    document.querySelector('.div_fiches').appendChild(div);
+
+                    let groupe_name = Fiches[i].nom_groupe;
+                    let groupe_id = Fiches[i].id_groupe;
+
+                    
+                    // si groupe id est null
+                    if (groupe_id == null || groupe_name == null) {
+                        continue;
+                    }
+                    console.log(groupe_name);
+                    console.log(groupe_id);
+
+                    div_ = document.createElement("div");
+                    div_.className = "fiche_home_div";
+                    div_.setAttribute("fiche_home_name", id);
+                    div_.innerHTML = inner;
+                    div_.addEventListener("click", function (event) {
+                        show_bulle(event, id);
+                    });
+
+                    if (document.querySelector(".fiche_home_div_groupe[fiche_home_name='" + groupe_id + "']")) {
+                        document.querySelector(".fiche_home_div_groupe[fiche_home_name='" + groupe_id + "']").appendChild(div_);
+                        continue;
+                    }
+                    
+                    let div_groupe = document.createElement("div");
+                    div_groupe.className = "fiche_home_div_groupe";
+                    div_groupe.setAttribute("fiche_home_name", groupe_id);
+                    div_groupe.appendChild(div_);
+
+                    let div_before = document.createElement("div");
+                    div_before.className = "fiche_home_div_before";
+                    div_before.innerHTML = groupe_name;
+                    div_groupe.appendChild(div_before);
+                    
+
+                    document.querySelector('.div_groupe_main').appendChild(div_groupe);
+
+
+                }
+
+                setTimeout(() => {
+                    document.querySelector(".div_chargement_home").style.display = "none";
+                }, 500);
+            }
+
+        } else if (response.status === 401) {
+            document.open();
+            document.write(data);
+            document.close();
+        }
+    }
+    getFiche();
+    async function get_header() {
+        const response = await fetch("http://192.168.1.74:3000/header", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        });
+        const data = await response.text();
+        if (response.ok) {
+            document.querySelector("header").innerHTML = data;
+        } else if (response.status === 401) {
+            document.querySelector("header").innerHTML = data;
+        }
+    }
+    get_header();
+
+    document.querySelector('.div_fiches').addEventListener("scroll", () => {
+        let bulle_ = document.querySelector(".bulle");
+        if (bulle_) {
+            bulle_.style.animation = "hide_notif 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards";
+            bulle_.classList.remove("show_notif");
+            setTimeout(() => {
+                bulle_.style.display = "none";
+            }, 200);
+        }
+    });
+
+    // Fonction pour charger une nouvelle page
+    function loadPage(url_) {
+        fetch(url_)
+            .then(response => response.text())
+            .then(html => {
+                document.open();
+                document.write(html);
+                document.close();
+            })
+            .catch(error => console.error('Erreur de chargement de la page:', error));
+    }
+
+    // Ajouter un nouvel état à l'historique
+    function navigateTo(url_) {
+        history.pushState(null, '', url_);
+        loadPage(url_);
+    }
+
+    // Écouter l'événement popstate
+    window.addEventListener('popstate', (event) => {
+        loadPage(location.pathname);
+    });
+</script>
+
+</html>

@@ -8,6 +8,7 @@ const cookieParser = require('cookie-parser');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.use(cookieParser());
@@ -22,19 +23,38 @@ app.get('/', (req, res) => {
         const data = verifyToken(token);
         if (data) {
             // Si le token est valide, redirige l'utilisateur vers la page d'accueil
-            return res.sendFile(path.join(__dirname, './home/home.html'));
+            return res.sendFile(path.join(__dirname, './home_fiche/home_fiche.html'));
         }
     }
         // Envoie 'index.html' situé dans le dossier home vers le client
     res.sendFile(path.join(__dirname, './connexion/connexion.html'));
 
 });
+app.get('/home%20fiche', (req, res) => {
+    //verifie si le token est présent
+    const token = req.cookies.token;
+    if (token) {
+        const data = verifyToken(token);
+        if (data) {
+            // Si le token est valide, redirige l'utilisateur vers la page d'accueil
+            return res.sendFile(path.join(__dirname, './home_fiche/home_fiche.html'));
+        }
+    }
+        // Envoie 'index.html' situé dans le dossier home vers le client
+    res.sendFile(path.join(__dirname, './connexion/connexion.html'));
+
+});
+
+
 app.get('/connexion', (req, res) => {
     // Envoie 'index.html' situé dans le dossier home vers le client
     res.sendFile(path.join(__dirname, './connexion/connexion.html'));
 
 });
-
+app.get('/slider', (req, res) => {
+    // Envoie 'index.html' situé dans le dossier home vers le client
+    res.sendFile(path.join(__dirname, './slider/slider.html'));
+});
 
 // Configuration MySQL
 const connection = mysql.createConnection({
@@ -246,13 +266,11 @@ app.post('/getData', async (req, res) => {
     }
 
     const { id } = req.body;
-    console.log(id);
-    console.log(userData.userID);
     try {
         // Récupérer le nom de la table
         const tableInfo = await new Promise((resolve, reject) => {
             connection.query(
-                `SELECT fiches_meta.table_name 
+                `SELECT fiches_meta.table_name ,fiches_meta.groupe_id
                  FROM user_fiches 
                  LEFT JOIN fiches_meta ON user_fiches.fiche_id = fiches_meta.id_fiche
                  WHERE user_fiches.user_id = ? AND user_fiches.fiche_id = ?`,
@@ -266,7 +284,6 @@ app.post('/getData', async (req, res) => {
         if (tableInfo.length === 0) {
             return res.status(404).json({ error: 'Fiche non trouvée' });
         }
-        console.log(tableInfo[0].table_name);
         // Récupérer la dernière version
         const ficheData = await new Promise((resolve, reject) => {
             connection.query(
@@ -278,13 +295,92 @@ app.post('/getData', async (req, res) => {
             );
         });
 
-        res.json({ success: true, data: ficheData });
+        res.json({ success: true, data: ficheData,info:tableInfo[0]});
     } catch (error) {
         console.error('Erreur lors de la récupération:', error);
         res.status(500).json({ error: 'Erreur lors de la récupération' });
     }
 });
 
+app.post('/UpdateGroupe', async (req, res) => {
+    const token = req.cookies.token;
+    if (!token) {
+        return res.status(401).json({ error: 'Non authentifié' });
+    }
+    
+    const userData = verifyToken(token);
+    if (!userData) {
+        return res.status(401).json({ error: 'Token invalide' });
+    }
+
+    const { groupe_id,id___ } = req.body;
+    try {
+        // Récupérer le nom de la table
+        const tableInfo = await new Promise((resolve, reject) => {
+            connection.query(
+                `SELECT fiches_meta.table_name ,fiches_meta.groupe_id
+                 FROM user_fiches 
+                 LEFT JOIN fiches_meta ON user_fiches.fiche_id = fiches_meta.id_fiche
+                 WHERE user_fiches.user_id = ? AND user_fiches.fiche_id = ?`,
+                [userData.userID, id___],
+                (error, results) => {
+                    if (error) reject(error);
+                    resolve(results);
+                }
+            );
+        });
+        if (tableInfo.length === 0) {
+            return res.status(404).json({ error: 'Fiche non trouvée' });
+        }
+        // Récupérer la dernière version
+        const ficheData = await new Promise((resolve, reject) => {
+            connection.query(
+                `UPDATE fiches_meta SET groupe_id = ? WHERE id_fiche = ?`,
+                [groupe_id, id___],
+                (error, results) => {
+                    if (error) reject(error);
+                    resolve(results);
+                }
+            );
+        });
+
+        res.json({ success: true, data: ficheData,info:tableInfo[0]});
+    } catch (error) {
+        console.error('Erreur lors de la récupération:', error);
+        res.status(500).json({ error: 'Erreur lors de la récupération' });
+    }
+});
+
+app.post('/AddGroupe', async (req, res) => {
+    const token = req.cookies.token;
+    if (!token) {
+        return res.status(401).json({ error: 'Non authentifié' });
+    }
+    
+    const userData = verifyToken(token);
+    if (!userData) {
+        return res.status(401).json({ error: 'Token invalide' });
+    }
+
+    const { groupe_name } = req.body;
+    try {
+        // Récupérer le nom de la table
+        const tableInfo = await new Promise((resolve, reject) => {
+            connection.query(
+                `INSERT INTO groupe (nom_groupe,user_id) VALUES (?,?)`,
+                [groupe_name,userData.userID],
+                (error, results) => {
+                    if (error) reject(error);
+                    resolve(results);
+                }
+            );
+        });
+        res.json({ success: true, data: tableInfo});
+    } catch (error) {
+        console.error('Erreur lors de la récupération:', error);
+        res.status(500).json({ error: 'Erreur lors de la récupération' });
+    }
+});
 // Route pour récupérer l'historique d'une fiche
 app.post('/getHistory', async (req, res) => {
     const token = req.cookies.token;
@@ -346,11 +442,12 @@ app.post('/getAllFicheByUser', async (req, res) => {
         // D'abord, récupérer les informations de base des fiches
         const tablesInfo = await new Promise((resolve, reject) => {
             connection.query(
-                `SELECT fiches_meta.table_name, user_fiches.fiche_id, fiches_meta.titre
+                `SELECT fiches_meta.table_name, user_fiches.fiche_id, fiches_meta.titre, groupe.id_groupe, groupe.nom_groupe
                  FROM user_fiches 
                  LEFT JOIN fiches_meta ON user_fiches.fiche_id = fiches_meta.id_fiche
+                 LEFT JOIN groupe ON fiches_meta.groupe_id = groupe.id_groupe AND groupe.user_id = ?
                  WHERE user_fiches.user_id = ?`,
-                [userData.userID],
+                [userData.userID,userData.userID],
                 (error, results) => {
                     if (error) reject(error);
                     resolve(results);
@@ -401,11 +498,101 @@ app.post('/getAllFicheByUser', async (req, res) => {
     }
 });
 
+app.post('/GetAllGroupeByUser', async (req, res) => {
+    const token = req.cookies.token;
+    if (!token) {
+        return res.status(401).json({ error: 'Non authentifié' });
+    }
+    
+    const userData = verifyToken(token);
+    if (!userData) {
+        return res.status(401).json({ error: 'Token invalide' });
+    }
+    
+    try {
+        // D'abord, récupérer les informations de base des fiches
+        const tablesInfo = await new Promise((resolve, reject) => {
+            connection.query(
+                `SELECT id_groupe, nom_groupe FROM groupe WHERE user_id = ?`,
+                [userData.userID],
+                (error, results) => {
+                    if (error) reject(error);
+                    resolve(results);
+                }
+            );
+        });
+
+        res.json({ 
+            success: true, 
+            data: tablesInfo,
+            message: tablesInfo.length === 0 ? 'Aucun groupe trouvé pour cet utilisateur' : undefined
+        });
+    } catch (error) {
+        console.error('Erreur lors de la récupération:', error);
+        res.status(500).json({ error: 'Erreur lors de la récupération' });
+    }
+});
+
+app.post('/getFicheById', async (req, res) => {
+    const token = req.cookies.token;
+    if (!token) {
+        return res.status(401).json({ error: 'Non authentifié' });
+    }
+    
+    const userData = verifyToken(token);
+    if (!userData) {
+        return res.status(401).json({ error: 'Token invalide' });
+    }
+
+    const { fiche_id } = req.body;
+    try {
+        // Récupérer les informations de base de la fiche
+        const ficheInfo = await new Promise((resolve, reject) => {
+            connection.query(
+                `SELECT fiches_meta.table_name, fiches_meta.titre 
+                 FROM user_fiches 
+                 LEFT JOIN fiches_meta ON user_fiches.fiche_id = fiches_meta.id_fiche
+                 WHERE user_fiches.user_id = ? AND user_fiches.fiche_id = ?`,
+                [userData.userID, fiche_id],
+                (error, results) => {
+                    if (error) reject(error);
+                    if (results.length === 0) reject(new Error('Fiche non trouvée'));
+                    resolve(results[0]);
+                }
+            );
+        });
+
+        // Récupérer le contenu de la fiche
+        const content = await new Promise((resolve, reject) => {
+            connection.query(
+                `SELECT inner_html, local_storage 
+                 FROM ${ficheInfo.table_name} 
+                 ORDER BY version_id DESC 
+                 LIMIT 1`,
+                (error, results) => {
+                    if (error) reject(error);
+                    resolve(results[0] || { inner_html: '', local_storage: '' });
+                }
+            );
+        });
+
+        res.json({ 
+            success: true, 
+            data: {
+                ...ficheInfo,
+                inner_html: content.inner_html,
+                local_storage: content.local_storage
+            }
+        });
+    } catch (error) {
+        console.error('Erreur lors de la récupération:', error);
+        res.status(500).json({ error: 'Erreur lors de la récupération' });
+    }
+});
+
 app.post('/register', async (req, res) => {
     const { username, password } = req.body;
-    console.log(password);
     const hash = await hashPassword(password);
-    console.log(hash);
     connection.query('INSERT INTO users (username, password) VALUES (?, ?)', [username, hash], function (error, results, fields) {
         if (error) throw error;
         res.json({ success: true });
@@ -420,7 +607,7 @@ app.post('/login', async (req, res) => {
         const data = verifyToken(token);
         if (data) {
             // Si le token est valide, redirige l'utilisateur vers la page d'accueil
-            return res.sendFile(path.join(__dirname, './home/home.html'));
+            return res.sendFile(path.join(__dirname, './home_fiche/home_fiche.html'));
         }
     }
 
@@ -443,15 +630,15 @@ app.post('/login', async (req, res) => {
                 res.cookie('username', username, { maxAge: 36000000, sameSite: 'Lax' });
 
                 // Redirige l'utilisateur vers la page d'accueil
-                return res.sendFile(path.join(__dirname, './home/home.html'));
+                return res.sendFile(path.join(__dirname, './home_fiche/home_fiche.html'));
             } else {
-                res.status(401).json({ error: 'Invalid credentials' });
+                res.status(401).json({ error: 'Invalid credentials', message: 'Utilisateur ou mot de passe incorrect' });
             }
         } else {
-            res.status(401).json({ error: 'Invalid credentials' });
+            res.status(401).json({ error: 'Invalid credentials' , message: 'Utilisateur ou mot de passe incorrect'});
         }
     } catch (error) {
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: 'Internal server error', message: 'Erreur lors de la connexion' });
     }
 });
 
@@ -469,7 +656,20 @@ app.get('/editor', (req, res) => {
 
     res.sendFile(path.join(__dirname, './fiche_editor/editor.html'));
 });
+app.get('/viewer', (req, res) => {
+    const token = req.cookies.token;
+    if (!token) {
+        return res.status(401).sendFile(path.join(__dirname, './connexion/connexion.html'));
+    }
+    const data = verifyToken(token);
+    if (!data) {
+        return res.status(401).sendFile(path.join(__dirname, './connexion/connexion.html'));
+    }
+    // Renvoyer la page viewer.html avec les données de la fiche
+    res.cookie('token', token, { maxAge: 3600000, sameSite: 'Lax' });
 
+    res.sendFile(path.join(__dirname, './fiche_viewer/viewer.html'));
+});
 app.get('/header', (req, res) => {
     res.sendFile(path.join(__dirname, './header/header.html'));
 });

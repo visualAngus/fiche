@@ -23,12 +23,15 @@
             <button type="submit" class="btn_connexion" onclick="login()">
                 Se connecter
             </button>
+            <div class="message">
+                <p id="message_p"></p>
+            </div>
         </div>
     </main>
 </body>
 <script>
     history.pushState(null, "", "/connexion");
-    async function login() {
+    async function login(type = 'manual') {
         const username = document.getElementById("username").value;
         const password = document.getElementById("password").value;
         // if (!token || (!username || !password)) return;
@@ -44,14 +47,25 @@
 
             const data = await response.text();
             if (response.ok) {
+
+                document.getElementById("message_p").style.color = "green";
+                document.getElementById("message_p").innerHTML = "Connexion réussie";
+
+
                 // data contient le code HTML de la page d'accueil
-                document.open();
-                document.write(data);
-                document.close();
+                setTimeout(() => {
+                    document.open();
+                    document.write(data);
+                    document.close();
+                }, 500);
 
 
             } else {
-                console.error(data.error);
+                data_ = JSON.parse(data);
+                console.error(data_.message);
+                if (type == "manual") {
+                    document.getElementById("message_p").innerHTML = data_.message;
+                }
 
             }
         } catch (error) {
@@ -59,8 +73,30 @@
         }
     }
 
-    login();
+    login("auto");
 
+    // Fonction pour charger une nouvelle page
+    function loadPage(url) {
+            fetch(url)
+                .then(response => response.text())
+                .then(html => {
+                    document.open();
+                    document.write(html);
+                    document.close();
+                })
+                .catch(error => console.error('Erreur de chargement de la page:', error));
+        }
+
+        // Ajouter un nouvel état à l'historique
+    function navigateTo(url) {
+        history.pushState(null, '', url);
+        loadPage(url);
+    }
+
+    // Écouter l'événement popstate
+    window.addEventListener('popstate', (event) => {
+        loadPage(location.pathname);
+    });
 </script>
 
 </html>

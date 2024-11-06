@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="/css/style_slider.css">
+</head>
+
+<body>
+    <main>
+        <div class="div_tool"></div>
+        <div class="div_slider_plus_page">
+            <div class="div_slider_part_main">
+            </div>
+            <div class="div_page_part_main">
+                <div class="modif_page_div">
+                    <div class="div_movable scalable"">
+                        <div contenteditable="true">Salut comment va tu qsdqswxcwxc wx cx wcxw cwx cwxcwdqs qs W fdsfs?</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+</body>
+<script>
+     // Définir une taille de référence pour le conteneur parent
+     const REFERENCE_WIDTH = 1920;
+    const REFERENCE_HEIGHT = 1080;
+
+    // Fonction pour calculer le ratio d'échelle
+    function calculateScale() {
+        const container = document.querySelector('.modif_page_div');
+        const containerRect = container.getBoundingClientRect();
+        const scaleX = containerRect.width / REFERENCE_WIDTH;
+        const scaleY = containerRect.height / REFERENCE_HEIGHT;
+        return Math.min(scaleX, scaleY);
+    }
+
+    // Fonction pour mettre à l'échelle un élément
+    function scaleElement(element, scale) {
+        const originalLeft = element.dataset.originalLeft || element.style.left || '0px';
+        const originalTop = element.dataset.originalTop || element.style.top || '0px';
+        const originalWidth = element.dataset.originalWidth || element.offsetWidth;
+        const originalHeight = element.dataset.originalHeight || element.offsetHeight;
+
+        if (!element.dataset.originalLeft) {
+            element.dataset.originalLeft = originalLeft;
+            element.dataset.originalTop = originalTop;
+            element.dataset.originalWidth = originalWidth;
+            element.dataset.originalHeight = originalHeight;
+        }
+
+        const originalLeftNum = parseFloat(originalLeft);
+        const originalTopNum = parseFloat(originalTop);
+
+        element.style.left = `${originalLeftNum * scale}px`;
+        element.style.top = `${originalTopNum * scale}px`;
+        element.style.width = `${originalWidth * scale}px`;
+        element.style.height = `${originalHeight * scale}px`;
+
+        const originalFontSize = element.dataset.originalFontSize ||
+            window.getComputedStyle(element).fontSize;
+        if (!element.dataset.originalFontSize) {
+            element.dataset.originalFontSize = originalFontSize;
+        }
+        const originalFontSizeNum = parseFloat(originalFontSize);
+        element.style.fontSize = `${originalFontSizeNum * scale}px`;
+    }
+
+    // Fonction pour mettre à l'échelle tous les éléments
+    function scaleAllElements() {
+        const scale = calculateScale();
+        const movableElements = document.querySelectorAll('.div_movable');
+        movableElements.forEach(element => {
+            scaleElement(element, scale);
+        });
+    }
+    // Écouteurs d'événements
+    window.addEventListener('resize', scaleAllElements);
+    document.addEventListener('DOMContentLoaded', scaleAllElements);
+</script>
+<script>
+    let all_div_movable = document.querySelectorAll('.div_movable');
+const position_ = [["0%","0%"],["0%","100%"],["100%","0%"],["100%","100%"]];
+const border_radius =[['50% 0 0 0'],['0 50% 0 0'],['0 0 0 50%'],['0 0 50% 0']];
+const tansform_ = ['translate(-100%, -100%)', 'translate(0%, -100%)', 'translate(-100%, 100%)', 'translate(0%, 100%)'];
+const cursor_ = ['nw-resize', 'ne-resize', 'sw-resize', 'se-resize'];
+
+for (let i = 0; i < all_div_movable.length; i++) {
+    let div_movable = all_div_movable[i];
+    let isEditing = false;
+
+    // Gérer le double-clic pour l'édition
+    div_movable.addEventListener('dblclick', function(e) {
+        if (e.target.getAttribute('contenteditable') === 'true') {
+            isEditing = true;
+            e.target.focus();
+        }
+    });
+
+    // Désactiver l'édition quand on clique ailleurs
+    document.addEventListener('mousedown', function(e) {
+        if (!div_movable.contains(e.target)) {
+            isEditing = false;
+        }
+    });
+
+    div_movable.addEventListener('mousedown', function (e) {
+        // Si on clique sur un élément éditable et qu'on est en mode édition, ne pas déplacer
+        if (e.target.getAttribute('contenteditable') === 'true' && (e.detail === 2 || isEditing)) {
+            return;
+        }
+
+        if (e.target.classList.contains('control_sphere')) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const scale = calculateScale();
+            const parentBox = div_movable.closest('.modif_page_div').getBoundingClientRect();
+            const elementBox = div_movable.getBoundingClientRect();
+            
+            const sphereIndex = Array.from(div_movable.querySelectorAll('.control_sphere')).indexOf(e.target);
+            const originalWidth = elementBox.width / scale;
+            const originalHeight = elementBox.height / scale;
+            const originalLeft = parseFloat(div_movable.dataset.originalLeft || '0');
+            const originalTop = parseFloat(div_movable.dataset.originalTop || '0');
+
+            function resizeAt(pageX, pageY) {
+                let newX = (pageX - parentBox.left) / scale;
+                let newY = (pageY - parentBox.top) / scale;
+
+                newX = Math.max(0, Math.min(parentBox.width / scale, newX));
+                newY = Math.max(0, Math.min(parentBox.height / scale, newY));
+
+                let newWidth, newHeight, newLeft, newTop;
+
+                switch(sphereIndex) {
+                    case 0:
+                        newWidth = originalLeft + originalWidth - newX;
+                        newHeight = originalTop + originalHeight - newY;
+                        newLeft = Math.min(originalLeft + originalWidth, newX);
+                        newTop = Math.min(originalTop + originalHeight, newY);
+                        break;
+                    case 1:
+                        newWidth = newX - originalLeft;
+                        newHeight = originalTop + originalHeight - newY;
+                        newLeft = originalLeft;
+                        newTop = Math.min(originalTop + originalHeight, newY);
+                        break;
+                    case 2:
+                        newWidth = originalLeft + originalWidth - newX;
+                        newHeight = newY - originalTop;
+                        newLeft = Math.min(originalLeft + originalWidth, newX);
+                        newTop = originalTop;
+                        break;
+                    case 3:
+                        newWidth = newX - originalLeft;
+                        newHeight = newY - originalTop;
+                        newLeft = originalLeft;
+                        newTop = originalTop;
+                        break;
+                }
+
+                const minSize = 50;
+                newWidth = Math.max(minSize, newWidth);
+                newHeight = Math.max(minSize, newHeight);
+
+                div_movable.dataset.originalWidth = newWidth;
+                div_movable.dataset.originalHeight = newHeight;
+                div_movable.dataset.originalLeft = `${newLeft}px`;
+                div_movable.dataset.originalTop = `${newTop}px`;
+
+                scaleElement(div_movable, scale);
+            }
+
+            function onMouseMove(e) {
+                resizeAt(e.clientX, e.clientY);
+            }
+
+            document.addEventListener('mousemove', onMouseMove);
+
+            document.addEventListener('mouseup', function() {
+                document.removeEventListener('mousemove', onMouseMove);
+            }, { once: true });
+
+            return;
+        }
+
+        // Ne pas déplacer si on est en mode édition
+        if (isEditing) {
+            return;
+        }
+
+        e.preventDefault();
+        const scale = calculateScale();
+        const parentBox = div_movable.closest('.modif_page_div').getBoundingClientRect();
+        const elementBox = div_movable.getBoundingClientRect();
+
+        let shiftX = e.clientX - elementBox.left;
+        let shiftY = e.clientY - elementBox.top;
+
+        function moveAt(pageX, pageY) {
+            let newLeft = (pageX - shiftX - parentBox.left) / scale;
+            let newTop = (pageY - shiftY - parentBox.top) / scale;
+
+            let rightBoundary = (parentBox.width / scale) - (elementBox.width / scale);
+            let bottomBoundary = (parentBox.height / scale) - (elementBox.height / scale);
+
+            newLeft = Math.max(0, Math.min(rightBoundary, newLeft));
+            newTop = Math.max(0, Math.min(bottomBoundary, newTop));
+
+            div_movable.dataset.originalLeft = `${newLeft}px`;
+            div_movable.dataset.originalTop = `${newTop}px`;
+
+            scaleElement(div_movable, scale);
+        }
+
+        function onMouseMove(e) {
+            moveAt(e.clientX, e.clientY);
+        }
+
+        document.addEventListener('mousemove', onMouseMove);
+
+        div_movable.onmouseup = function () {
+            document.removeEventListener('mousemove', onMouseMove);
+            div_movable.onmouseup = null;
+        };
+
+        document.addEventListener('mouseleave', function () {
+            document.removeEventListener('mousemove', onMouseMove);
+            div_movable.onmouseup = null;
+        }, { once: true });
+    });
+
+    div_movable.ondragstart = function () {
+        return false;
+    };
+}
+
+function get_all_scalable() {
+    let all_scalable = document.querySelectorAll('.scalable');
+    all_scalable.forEach(element => {
+        for (let i = 0; i < 4; i++) {
+            let control_sphere = document.createElement('div');
+            control_sphere.classList.add('control_sphere');
+            control_sphere.style.position = 'absolute';
+            control_sphere.style.top = position_[i][0];
+            control_sphere.style.left = position_[i][1];
+            control_sphere.style.borderRadius = border_radius[i];
+            control_sphere.style.transform = tansform_[i];
+            control_sphere.style.cursor = cursor_[i];
+            element.appendChild(control_sphere);
+        }
+    });
+}
+
+get_all_scalable();
+</script>
+
+</html>

@@ -1,0 +1,79 @@
+@media (min-width: 600px) {
+    main{
+        display: flex;
+        flex-direction: column!important;
+        justify-content: center!important;
+        align-items: center !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        padding-top: 0 !important;
+        width: 100%;
+        height: 100%;
+    
+        position: relative;
+        z-index: 1;
+    }
+    .div_fiche_viewer{
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        border-radius: 10px;
+        overflow-y: hidden;
+        height: 100%;
+        aspect-ratio: 12.5/20;
+    
+        position: relative;
+        z-index: 1;
+    }
+    .white::before {
+        width: 100%;
+        height: 5000px !important;
+
+    }
+}
+
+
+
+@media (max-width: 600px) {
+    main{
+        display: flex;
+        flex-direction: column!important;
+        justify-content: center!important;
+        align-items: center !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        padding-top: 0 !important;
+        width: 100%;
+        height: 100%;
+    
+        position: relative;
+        z-index: 1;
+    }
+    .div_fiche_viewer{
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        border-radius: 10px;
+        overflow: hidden;
+        height: 100%;
+        width: 100%;
+    
+        position: relative;
+        z-index: 1;
+    }
+    .div_fiche_viewer{
+        width: 100%;
+        height: 100%;
+        aspect-ratio: none;
+    }
+    .white::before {
+        width: 100%;
+        height: auto !important;
+        aspect-ratio: 12.5/20;
+
+    }
+}
+
+

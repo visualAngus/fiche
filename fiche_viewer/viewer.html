@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Viewer</title>
+    <link rel="stylesheet" href="/css/style_fiche_viewer.css" />
+    <link rel="stylesheet" href="/css/fiche_editor.css" />
+    <link rel="stylesheet" href="/css/style_txt_fiche.css" />
+    <link rel="stylesheet" href="/css/style_header.css" />
+    <link rel="stylesheet" href="/css/style_header.css" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Courgette&family=Itim&family=Nerko+One&family=Oregano:ital@0;1&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap"
+        rel="stylesheet">
+</head>
+<body>
+    <header></header>
+
+    <main>
+        <div class="div_fiche_viewer">
+        </div>
+    </main>
+</body>
+<script>
+     async function getFiche() {
+        let url = new URL(window.location.href);
+        let fiche_id = url.searchParams.get("fiche_id");
+        console.log(fiche_id);
+
+        if (!fiche_id) {
+            setTimeout(() => {
+                getFiche()
+            }, 200);
+            return;
+        }
+
+        const response = await fetch("http://192.168.1.74:3000/getFicheById", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ fiche_id:fiche_id })
+        });
+        const data = await response.json();
+        if (response.ok) {
+            console.log(data);
+            if (data.success) {
+                let inner = data.data.inner_html;
+                if (inner.length == 0) {
+                    inner = "Pas de contenu";
+                }
+                document.querySelector('.div_fiche_viewer').innerHTML = inner;
+            }
+        }
+    }
+
+    getFiche();
+
+    async function get_header() {
+        const response = await fetch("http://192.168.1.74:3000/header", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        });
+        const data = await response.text();
+        if (response.ok) {
+            document.querySelector("header").innerHTML = data;
+        } else if (response.status === 401) {
+            document.querySelector("header").innerHTML = data;
+        }
+    }
+    get_header();
+
+    // Fonction pour charger une nouvelle page
+    function loadPage(url_) {
+        fetch(url_)
+            .then(response => response.text())
+            .then(html => {
+                document.open();
+                document.write(html);
+                document.close();
+            })
+            .catch(error => console.error('Erreur de chargement de la page:', error));
+    }
+
+    // Ajouter un nouvel état à l'historique
+    function navigateTo(url_) {
+        history.pushState(null, '', url_);
+        loadPage(url_);
+    }
+
+    // Écouter l'événement popstate
+    window.addEventListener('popstate', (event) => {
+        loadPage(location.pathname);
+    });
+</script>
+</html>

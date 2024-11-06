@@ -1,0 +1,113 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+div {
+    unicode-bidi: isolate;
+    tab-size: 4;
+
+}
+
+body {
+    height: 100dvh;
+    width: 100dvw;
+
+    --border-color: #cfd1d6;
+    --large-background-color: #eceef4;
+    --contrast-color: #1375d1;
+    --low-blue: #b4d0ec;
+    --texte-low-constrast: #3b3b3b;
+    --texte-high-constrast: #df2424;
+    --texte-color: #000;
+    --selection-color: #1375d142;
+
+
+    background-color: var(--large-background-color);
+
+    font-family: "Raleway", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 600;
+    font-style: normal;
+}
+
+
+
+main{
+    height: 100%;
+    width: 100%;
+    background-color: #ff0000;
+    font-family: 'Poppins', sans-serif;
+}
+
+.div_tool{
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    height: 70px;
+    width: 100%;
+    background-color: #f1f1f1;
+}
+.div_slider_plus_page{
+    width: 100%;
+    height: calc(100% - 70px);
+
+    background-color: blueviolet;
+
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+}
+
+.div_slider_part_main{
+    height: 100%;
+    width: 35%;
+    min-width: 250px;
+    max-width: 400px;
+    background-color: #df2424;
+}
+.div_page_part_main{
+    width: 100%;
+    height: 100%;
+    background-color: var(--large-background-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 25px;
+}
+.modif_page_div {
+    position: relative;
+    aspect-ratio: 16/9;
+    width: 100%;
+    background-color: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    overflow: hidden; /* Pour empêcher le débordement */
+}
+
+.div_movable {
+    position: absolute;
+    transform-origin: top left; /* Important pour le scaling */
+    padding: 1px;
+
+    width: max-content;
+    height: max-content;
+}
+.div_movable.scalable{
+    border: 1px dashed var(--selection-color);
+    background-color: purple;
+}
+
+.control_sphere{
+    width: 10px;
+    aspect-ratio: 1;
+    background-color: burlywood;
+
+    position: absolute;
+    z-index: 3;
+
+
+}
