@@ -754,4 +754,5 @@ function decryptWithSecondaryKey(encryptedData, secondaryKey, iv, authTag) {
 
 app.listen(PORT, () => {
     console.log(`Serveur démarré sur http://localhost:${PORT}`);
+    console.log("version 2 sécurisé");
 });
