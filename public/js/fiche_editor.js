@@ -792,7 +792,7 @@ async function save(id, inner_html, local_storage, automatic = false) {
         commentaire = "Sauvegarde automatique";
     }
 
-    const response = await fetch("http://192.168.1.66:3000/save", {
+    const response = await fetch("http://88.166.208.243:3000/save", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -812,7 +812,7 @@ async function save(id, inner_html, local_storage, automatic = false) {
         document.body.style.pointerEvents = 'none';
         notif_permant_show("Vous devez vous connecter pour sauvegarder");
         // ouvre un nouvel onglet avec la page de login
-        let newTab = window.open("http://192.168.1.66:3000/connexion", "_blank");
+        let newTab = window.open("http://88.166.208.243:3000/connexion", "_blank");
         newTab.focus();
 
         const intervalId = setInterval(() => {
@@ -859,7 +859,7 @@ document.getElementsByClassName("btn_save_div")[0].addEventListener("click", () 
 async function LoadFiche() {
     const params = new URLSearchParams(window.location.search);
     let id = params.get("id");
-    const response = await fetch("http://192.168.1.66:3000/getData", {
+    const response = await fetch("http://88.166.208.243:3000/getData", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -990,7 +990,7 @@ function notif_txt(txt) {
 }
 
 async function get_header() {
-    const response = await fetch("http://192.168.1.66:3000/header", {
+    const response = await fetch("http://88.166.208.243:3000/header", {
         method: "GET",
         headers: {
             "Content-Type": "application/json"
