@@ -563,10 +563,16 @@ function Change_title_color(color, id_elem) {
     console.log(id_elem);
     let elem = document.querySelector("#" + id_elem + " .div_def_fiche_title");
     elem.style.color = color;
-
-    if (!liste_key_local_storage.includes("titreColor" + id_elem)) {
-        liste_key_local_storage.push("titreColor" + id_elem);
+    console.log(elem.id);
+    localStorage.setItem(elem.id, color);
+    if (!liste_key_local_storage.includes(elem.id)) {
+        liste_key_local_storage.push(elem.id);
     }
+}
+
+function Change_title_color_auto(color, id_elem) {
+    let elem = document.querySelector("#divDefFicheTitle_" + id_elem);
+    elem.style.color = color;
 }
 
 function add_fond(elem, important = -1) {
@@ -656,13 +662,20 @@ function change_def_style(elem) {
 }
 
 function add_definition_title(elem) {
+    console.log(elem);
+    if (elem.querySelector(".div_def_fiche_title")) {
+        return;
+    }
     let div = document.createElement("div");
     div.className = "div_def_fiche_title";
+    div.id = "divDefFicheTitle_"+elem.getAttribute("id_def_fiche");
     div.textContent = "Définitions";
     elem.appendChild(div);
 }
 function remove_definition_title(elem) {
     let div = elem.querySelector(".div_def_fiche_title");
+    console.log(elem);
+    console.log(div);
     if (div) {
         div.remove();
     }
@@ -713,6 +726,7 @@ function update() {
                 deff.id = "defGroup_" + i;
                 deff.className = "div_defs_fiche";
                 deff.addEventListener("click", () => {
+                    console.log(deff);
                     change_def_style(deff);
                 });
 
@@ -951,10 +965,10 @@ async function LoadFiche() {
 
     setTimeout(() => {
         for (let j = 0; j < parseInt(id) + 1; j++) {
-            const savedColor = localStorage.getItem("titreColordefGroup_" + j);
+            const savedColor = localStorage.getItem("divDefFicheTitle_" + j);
             if (savedColor) {
                 console.log(savedColor);
-                Change_title_color(savedColor, "defGroup_" + j);
+                Change_title_color_auto(savedColor, j);
             }
             const savedEmportant = localStorage.getItem("titreEmportantdefGroup_" + j);
             if (savedEmportant) {
