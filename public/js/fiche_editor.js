@@ -560,9 +560,9 @@ function createEditorDefinition(id, mot, content) {
 }
 
 function Change_title_color(color, id_elem) {
-    const styleSheet = document.styleSheets[0]; // La première feuille de style de la page
-    styleSheet.insertRule(`#${id_elem} .div_def_fiche.first::before { color: ${color} !important; }`, styleSheet.cssRules.length);
-    localStorage.setItem("titreColor" + id_elem, color);
+    console.log(id_elem);
+    let elem = document.querySelector("#" + id_elem + " .div_def_fiche_title");
+    elem.style.color = color;
 
     if (!liste_key_local_storage.includes("titreColor" + id_elem)) {
         liste_key_local_storage.push("titreColor" + id_elem);
@@ -655,6 +655,20 @@ function change_def_style(elem) {
 
 }
 
+function add_definition_title(elem) {
+    let div = document.createElement("div");
+    div.className = "div_def_fiche_title";
+    div.textContent = "Définitions";
+    elem.appendChild(div);
+}
+function remove_definition_title(elem) {
+    let div = elem.querySelector(".div_def_fiche_title");
+    if (div) {
+        div.remove();
+    }
+}
+
+
 function update() {
     let div_fiche = document.querySelector(".div_fiche");
     let children = Array.from(div_fiche.children); // Convertir en tableau pour faciliter la manipulation
@@ -673,12 +687,16 @@ function update() {
             consecutiveDivDefFicheCount++;
             if (consecutiveDivDefFicheCount === 2) {
                 last_div_def_fiche.classList.add("first");
+                add_definition_title(last_div_def_fiche);
                 children[i].classList.remove("first");
+                remove_definition_title(children[i])
             } else if (consecutiveDivDefFicheCount === 1) {
                 if (children[i].previousElementSibling && children[i].previousElementSibling.classList.contains("div_defs_fiche")) {
                     children[i].previousElementSibling.appendChild(children[i]);
                 } else {
                     children[i].classList.add("first");
+                    add_definition_title(children[i]);
+
                 }
             }
 

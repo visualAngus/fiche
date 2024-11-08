@@ -61,7 +61,7 @@
     margin-top: 2.8em;
 }
 
-.div_def_fiche.first::before {
+.div_def_fiche_title {
     content: "Définition";
 
     font-family: "Nerko One", cursive;
