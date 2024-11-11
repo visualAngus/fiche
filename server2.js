@@ -212,7 +212,6 @@ app.post('/save', async (req, res) => {
     // si le token est bon, mettre à jourt le token chez le client pour une durée de 1h
     res.cookie('token', token, { maxAge: 3600000, sameSite: 'Lax' });
     const { id, inner_html, local_storage, commentaire = 'Mise à jour' } = req.body;
-
     let encryptedInnerHtml = encryptWithSecondaryKey(inner_html, secondaryKey);
     let encryptedLocalStorage = encryptWithSecondaryKey(local_storage, secondaryKey);
 
@@ -302,9 +301,14 @@ app.post('/getData', async (req, res) => {
                 }
             );
         });
+        
+        let decryptedInnerHtml = ficheData[0].inner_html;
+        let decryptedLocalStorage = ficheData[0].local_storage;
 
-        let decryptedInnerHtml = decryptWithSecondaryKey(ficheData[0].inner_html, Buffer.from(req.cookies.secondaryKey, 'hex'), ficheData[0].iv_inner, ficheData[0].authTag_inner);
-        let decryptedLocalStorage = decryptWithSecondaryKey(ficheData[0].local_storage, Buffer.from(req.cookies.secondaryKey, 'hex'), ficheData[0].iv_local, ficheData[0].authTag_local);
+        if (ficheData[0].iv_inner && ficheData[0].authTag_inner && ficheData[0].iv_local && ficheData[0].authTag_local) {
+            decryptedInnerHtml = decryptWithSecondaryKey(ficheData[0].inner_html, Buffer.from(req.cookies.secondaryKey, 'hex'), ficheData[0].iv_inner, ficheData[0].authTag_inner);
+            decryptedLocalStorage = decryptWithSecondaryKey(ficheData[0].local_storage, Buffer.from(req.cookies.secondaryKey, 'hex'), ficheData[0].iv_local, ficheData[0].authTag_local);
+        }
         ficheData[0].inner_html = decryptedInnerHtml;
         ficheData[0].local_storage = decryptedLocalStorage;
         res.json({ success: true, data: ficheData, info: tableInfo[0] });
@@ -588,6 +592,7 @@ app.post('/getFicheById', async (req, res) => {
                 }
             );
         });
+
         let decryptedInnerHtml = content.inner_html;
         let decryptedLocalStorage = content.local_storage;
 
@@ -595,6 +600,8 @@ app.post('/getFicheById', async (req, res) => {
             decryptedInnerHtml = decryptWithSecondaryKey(content.inner_html, Buffer.from(req.cookies.secondaryKey, 'hex'), content.iv_inner, content.authTag_inner);
             decryptedLocalStorage = decryptWithSecondaryKey(content.local_storage, Buffer.from(req.cookies.secondaryKey, 'hex'), content.iv_local, content.authTag_local);
         }
+
+
         res.json({
             success: true,
             data: {
@@ -844,8 +851,6 @@ async function hashPassword(password) {
     const hash = await bcrypt.hash(password, saltRounds);
     return hash;
 }
-
-hashPassword('admin').then(hash => console.log(hash));
 
 async function verifyPassword(password, hash) {
     const match = await bcrypt.compare(password, hash);
