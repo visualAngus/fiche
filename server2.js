@@ -5,6 +5,7 @@ const mysql = require('mysql');
 const bcrypt = require('bcrypt');
 const cookieParser = require('cookie-parser');
 const crypto = require('crypto');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -15,7 +16,94 @@ app.use(express.json());
 app.use(cookieParser());
 
 const saltRounds = 10;
-const SECRET_KEY = "rsdquhkdhv,;d620aqc2dqs65azckjej:ùmm^fùs^fsdù:sfq*ùdf:s";
+const SECRET_KEY = fs.readFileSync(path.join(__dirname, './certs/server.key'), 'utf8').trim();
+// Configuration MySQL
+const connection_fiches = mysql.createConnection({
+    host: 'localhost',
+    user: 'root',
+    password: '',
+    database: 'fiche'
+});
+connection_fiches.connect(function (err) {
+    if (err) {
+        console.error('error connecting: ' + err.stack);
+        return;
+    }
+    console.log('connected as id ' + connection_fiches.threadId);
+});
+
+connection_agenda = mysql.createConnection({
+    host: 'localhost',
+    user: 'root',
+    password: '',
+    database: 'agenda'
+});
+connection_agenda.connect(function (err) {
+    if (err) {
+        console.error('error connecting: ' + err.stack);
+        return;
+    }
+    console.log('connected as id ' + connection_agenda.threadId);
+}
+);
+
+// Création des tables principales
+const initDatabase = async () => {
+    // Table pour stocker les métadonnées des fiches
+    const createFichesMetaTable = `
+        CREATE TABLE IF NOT EXISTS fiches_meta (
+            id_fiche INT PRIMARY KEY AUTO_INCREMENT,
+            titre VARCHAR(255) NOT NULL,
+            table_name VARCHAR(255) NOT NULL,
+            date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    `;
+
+    // Table de liaison entre utilisateurs et fiches
+    const createUserFichesTable = `
+        CREATE TABLE IF NOT EXISTS user_fiches (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            user_id INT,
+            fiche_id INT,
+            FOREIGN KEY (user_id) REFERENCES users(id),
+            FOREIGN KEY (fiche_id) REFERENCES fiches_meta(id_fiche),
+            date_attribution TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    `;
+
+    try {
+        await connection_fiches.query(createFichesMetaTable);
+        await connection_fiches.query(createUserFichesTable);
+        console.log('Tables principales créées avec succès');
+    } catch (error) {
+        console.error('Erreur lors de la création des tables:', error);
+    }
+};
+// Fonction pour créer une table spécifique pour une fiche
+const createFicheTable = async (tableName) => {
+    const createTableQuery = `
+        CREATE TABLE ${tableName} (
+            version_id INT PRIMARY KEY AUTO_INCREMENT,
+            inner_html TEXT,
+            local_storage TEXT,
+            date_modification TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            commentaire VARCHAR(255),
+            iv_inner VARCHAR(255),
+            authTag_inner VARCHAR(255),
+            iv_local VARCHAR(255),
+            authTag_local VARCHAR(255)
+        )
+    `;
+
+    return new Promise((resolve, reject) => {
+        connection_fiches.query(createTableQuery, (error) => {
+            if (error) reject(error);
+            resolve();
+        });
+    });
+};
+
+// Importer un autre fichier JavaScript
 
 app.get('/', (req, res) => {
     //verifie si le token est présent
@@ -43,75 +131,8 @@ app.get('/slider', (req, res) => {
     // Envoie 'index.html' situé dans le dossier home vers le client
     res.sendFile(path.join(__dirname, './slider/slider.html'));
 });
-// Configuration MySQL
-const connection = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    database: 'fiche'
-});
-connection.connect(function (err) {
-    if (err) {
-        console.error('error connecting: ' + err.stack);
-        return;
-    }
-    console.log('connected as id ' + connection.threadId);
-});
-// Création des tables principales
-const initDatabase = async () => {
-    // Table pour stocker les métadonnées des fiches
-    const createFichesMetaTable = `
-        CREATE TABLE IF NOT EXISTS fiches_meta (
-            id_fiche INT PRIMARY KEY AUTO_INCREMENT,
-            titre VARCHAR(255) NOT NULL,
-            table_name VARCHAR(255) NOT NULL,
-            date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    `;
 
-    // Table de liaison entre utilisateurs et fiches
-    const createUserFichesTable = `
-        CREATE TABLE IF NOT EXISTS user_fiches (
-            id INT PRIMARY KEY AUTO_INCREMENT,
-            user_id INT,
-            fiche_id INT,
-            FOREIGN KEY (user_id) REFERENCES users(id),
-            FOREIGN KEY (fiche_id) REFERENCES fiches_meta(id_fiche),
-            date_attribution TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    `;
-
-    try {
-        await connection.query(createFichesMetaTable);
-        await connection.query(createUserFichesTable);
-        console.log('Tables principales créées avec succès');
-    } catch (error) {
-        console.error('Erreur lors de la création des tables:', error);
-    }
-};
-// Fonction pour créer une table spécifique pour une fiche
-const createFicheTable = async (tableName) => {
-    const createTableQuery = `
-        CREATE TABLE ${tableName} (
-            version_id INT PRIMARY KEY AUTO_INCREMENT,
-            inner_html TEXT,
-            local_storage TEXT,
-            date_modification TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            commentaire VARCHAR(255),
-            iv_inner VARCHAR(255),
-            authTag_inner VARCHAR(255),
-            iv_local VARCHAR(255),
-            authTag_local VARCHAR(255)
-        )
-    `;
-
-    return new Promise((resolve, reject) => {
-        connection.query(createTableQuery, (error) => {
-            if (error) reject(error);
-            resolve();
-        });
-    });
-};
+//fiche -----------------------------------------------------------------------------
 // Route pour créer une nouvelle fiche
 app.post('/createFiche', async (req, res) => {
     const token = req.cookies.token;
@@ -129,7 +150,7 @@ app.post('/createFiche', async (req, res) => {
     try {
         const createFicheResult = await new Promise((resolve, reject) => {
             const tableName = `fiche_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-            connection.query(
+            connection_fiches.query(
                 'INSERT INTO fiches_meta (titre, table_name) VALUES (?, ?)',
                 [titre, tableName],
                 (error, results) => {
@@ -144,7 +165,7 @@ app.post('/createFiche', async (req, res) => {
 
         // Insérer la première version vide dans la table de la fiche
         await new Promise((resolve, reject) => {
-            connection.query(
+            connection_fiches.query(
                 `INSERT INTO ${createFicheResult.tableName} (inner_html, local_storage, commentaire,iv_inner,authTag_inner,iv_local,authTag_local) VALUES (?, ?, ?,?,?,?,?)`,
                 ['', '', 'Version initiale', '', '', '', ''],
                 (error, results) => {
@@ -156,7 +177,7 @@ app.post('/createFiche', async (req, res) => {
 
         // Créer la liaison utilisateur-fiche
         await new Promise((resolve, reject) => {
-            connection.query(
+            connection_fiches.query(
                 'INSERT INTO user_fiches (user_id, fiche_id) VALUES (?, ?)',
                 [userData.userID, createFicheResult.results.insertId],
                 (error, results) => {
@@ -198,7 +219,7 @@ app.post('/save', async (req, res) => {
     try {
         // Récupérer le nom de la table
         const tableInfo = await new Promise((resolve, reject) => {
-            connection.query(
+            connection_fiches.query(
                 `SELECT fiches_meta.table_name 
                  FROM user_fiches 
                  LEFT JOIN fiches_meta ON user_fiches.fiche_id = fiches_meta.id_fiche
@@ -215,7 +236,7 @@ app.post('/save', async (req, res) => {
         }
         // Insérer la nouvelle version
         await new Promise((resolve, reject) => {
-            connection.query(
+            connection_fiches.query(
                 `INSERT INTO ${tableInfo[0].table_name} (inner_html, local_storage, commentaire,iv_inner,authTag_inner,iv_local,authTag_local) VALUES (?, ?, ?,?,?,?,?)`,
                 [encryptedInnerHtml.encryptedData, encryptedLocalStorage.encryptedData, commentaire, encryptedInnerHtml.iv, encryptedInnerHtml.authTag, encryptedLocalStorage.iv, encryptedLocalStorage.authTag],
                 (error, results) => {
@@ -225,7 +246,7 @@ app.post('/save', async (req, res) => {
             );
         });
         const ficheDate = await new Promise((resolve, reject) => {
-            connection.query(
+            connection_fiches.query(
                 `SELECT date_modification FROM ${tableInfo[0].table_name} ORDER BY version_id DESC LIMIT 1`,
                 (error, results) => {
                     if (error) reject(error);
@@ -256,7 +277,7 @@ app.post('/getData', async (req, res) => {
     try {
         // Récupérer le nom de la table
         const tableInfo = await new Promise((resolve, reject) => {
-            connection.query(
+            connection_fiches.query(
                 `SELECT fiches_meta.table_name ,fiches_meta.groupe_id
                  FROM user_fiches 
                  LEFT JOIN fiches_meta ON user_fiches.fiche_id = fiches_meta.id_fiche
@@ -273,7 +294,7 @@ app.post('/getData', async (req, res) => {
         }
         // Récupérer la dernière version
         const ficheData = await new Promise((resolve, reject) => {
-            connection.query(
+            connection_fiches.query(
                 `SELECT * FROM ${tableInfo[0].table_name} ORDER BY version_id DESC LIMIT 1`,
                 (error, results) => {
                     if (error) reject(error);
@@ -307,7 +328,7 @@ app.post('/UpdateGroupe', async (req, res) => {
     try {
         // Récupérer le nom de la table
         const tableInfo = await new Promise((resolve, reject) => {
-            connection.query(
+            connection_fiches.query(
                 `SELECT fiches_meta.table_name ,fiches_meta.groupe_id
                  FROM user_fiches 
                  LEFT JOIN fiches_meta ON user_fiches.fiche_id = fiches_meta.id_fiche
@@ -324,7 +345,7 @@ app.post('/UpdateGroupe', async (req, res) => {
         }
         // Récupérer la dernière version
         const ficheData = await new Promise((resolve, reject) => {
-            connection.query(
+            connection_fiches.query(
                 `UPDATE fiches_meta SET groupe_id = ? WHERE id_fiche = ?`,
                 [groupe_id, id___],
                 (error, results) => {
@@ -355,7 +376,7 @@ app.post('/AddGroupe', async (req, res) => {
     try {
         // Récupérer le nom de la table
         const tableInfo = await new Promise((resolve, reject) => {
-            connection.query(
+            connection_fiches.query(
                 `INSERT INTO groupe (nom_groupe,user_id) VALUES (?,?)`,
                 [groupe_name, userData.userID],
                 (error, results) => {
@@ -387,7 +408,7 @@ app.post('/getHistory', async (req, res) => {
     try {
         // Récupérer le nom de la table
         const tableInfo = await new Promise((resolve, reject) => {
-            connection.query(
+            connection_fiches.query(
                 'SELECT table_name FROM fiches_meta WHERE id_fiche = ?',
                 [id],
                 (error, results) => {
@@ -400,7 +421,7 @@ app.post('/getHistory', async (req, res) => {
 
         // Récupérer tout l'historique
         const history = await new Promise((resolve, reject) => {
-            connection.query(
+            connection_fiches.query(
                 `SELECT version_id, date_modification, commentaire FROM ${tableInfo.table_name} ORDER BY version_id DESC`,
                 (error, results) => {
                     if (error) reject(error);
@@ -429,7 +450,7 @@ app.post('/getAllFicheByUser', async (req, res) => {
     try {
         // D'abord, récupérer les informations de base des fiches
         const tablesInfo = await new Promise((resolve, reject) => {
-            connection.query(
+            connection_fiches.query(
                 `SELECT fiches_meta.table_name, user_fiches.fiche_id, fiches_meta.titre, groupe.id_groupe, groupe.nom_groupe
                  FROM user_fiches 
                  LEFT JOIN fiches_meta ON user_fiches.fiche_id = fiches_meta.id_fiche
@@ -447,7 +468,7 @@ app.post('/getAllFicheByUser', async (req, res) => {
         const fichesWithContent = await Promise.all(tablesInfo.map(async (fiche) => {
             try {
                 const content = await new Promise((resolve, reject) => {
-                    connection.query(
+                    connection_fiches.query(
                         `SELECT *
                          FROM ${fiche.table_name} 
                          ORDER BY version_id DESC 
@@ -505,7 +526,7 @@ app.post('/GetAllGroupeByUser', async (req, res) => {
     try {
         // D'abord, récupérer les informations de base des fiches
         const tablesInfo = await new Promise((resolve, reject) => {
-            connection.query(
+            connection_fiches.query(
                 `SELECT id_groupe, nom_groupe FROM groupe WHERE user_id = ?`,
                 [userData.userID],
                 (error, results) => {
@@ -540,7 +561,7 @@ app.post('/getFicheById', async (req, res) => {
     try {
         // Récupérer les informations de base de la fiche
         const ficheInfo = await new Promise((resolve, reject) => {
-            connection.query(
+            connection_fiches.query(
                 `SELECT fiches_meta.table_name, fiches_meta.titre 
                  FROM user_fiches 
                  LEFT JOIN fiches_meta ON user_fiches.fiche_id = fiches_meta.id_fiche
@@ -556,7 +577,7 @@ app.post('/getFicheById', async (req, res) => {
 
         // Récupérer le contenu de la fiche
         const content = await new Promise((resolve, reject) => {
-            connection.query(
+            connection_fiches.query(
                 `SELECT *
                  FROM ${ficheInfo.table_name} 
                  ORDER BY version_id DESC 
@@ -590,7 +611,7 @@ app.post('/getFicheById', async (req, res) => {
 app.post('/register', async (req, res) => {
     const { username, password } = req.body;
     const hash = await hashPassword(password);
-    connection.query('INSERT INTO users (username, password) VALUES (?, ?)', [username, hash], function (error, results, fields) {
+    connection_fiches.query('INSERT INTO users (username, password) VALUES (?, ?)', [username, hash], function (error, results, fields) {
         if (error) throw error;
         res.json({ success: true });
     });
@@ -604,21 +625,18 @@ app.post('/login', async (req, res) => {
     try {
         // Récupère l'utilisateur depuis la base de données
         const results = await new Promise((resolve, reject) => {
-            connection.query('SELECT * FROM users WHERE BINARY username = ?', [username], (error, results) => {
+            connection_fiches.query('SELECT * FROM users WHERE BINARY username = ?', [username], (error, results) => {
                 if (error) return reject(error);
                 resolve(results);
             });
         });
-
         if (results.length > 0) {
             const { id, password: hash } = results[0];
             const isPasswordValid = await verifyPassword(password, hash);
             if (isPasswordValid) {
                 const token = generateToken(username, id);
-
                 //generate a secondary key
                 const secondaryKey = generateSecondaryKey(SECRET_KEY, password);
-
                 // Mettre le token dans un cookie HTTP
                 res.cookie('token', token, { maxAge: 3600000, sameSite: 'Lax' });
                 res.cookie('username', username, { maxAge: 36000000, sameSite: 'Lax' });
@@ -668,10 +686,166 @@ app.get('/header', (req, res) => {
     res.sendFile(path.join(__dirname, './header/header.html'));
 });
 
+//agenda --------------------------------------------------------------------------------
+
+const createAgenda = async (tableName) => {
+    const createTableQuery = `
+        CREATE TABLE ${tableName} (
+            event_id INT PRIMARY KEY AUTO_INCREMENT,
+            nom TEXT,
+            description TEXT,
+            start_hour TEXT,
+            end_hour TEXT,
+            date TEXT,
+            color VARCHAR(255),
+            id_groupe_link INT,
+            iv_inner VARCHAR(255),
+            authTag_inner VARCHAR(255),
+            iv_local VARCHAR(255),
+            authTag_local VARCHAR(255)
+        )
+    `;
+
+    return new Promise((resolve, reject) => {
+        connection_agenda.query(createTableQuery, (error) => {
+            if (error) reject(error);
+            resolve();
+        });
+    });
+};
+
+app.post('/createEvent', async (req, res) => {
+    const token = req.cookies.token;
+    if (verificationAll(req) == false) {
+        return res.sendFile(path.join(__dirname, './connexion/connexion.html'));
+    }
+
+    const userData = verifyToken(token);
+    if (!userData) {
+        return res.status(401).json({ error: 'Token invalide' });
+    }
+
+    const { titre, heure_debut, heure_fin, description, date,color,id_groupe } = req.body;
+
+    try {
+        // verifier si l'utilisateur n'a pas déjà un agenda
+        const agendaInfo = await new Promise((resolve, reject) => {
+            connection_agenda.query(
+                `SELECT agenda_table_name FROM users_agenda WHERE user_id = ?`,
+                [userData.userID],
+                (error, results) => {
+                    if (error) reject(error);   
+                    resolve(results);
+                }
+            );
+        });
+
+        let tableName = '';
+        if (agendaInfo.length === 0) {
+            tableName = `agenda_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+            await createAgenda(tableName);
+            await new Promise((resolve, reject) => {
+                connection_agenda.query(
+                    'INSERT INTO users_agenda (user_id, agenda_table_name) VALUES (?, ?)',
+                    [userData.userID, tableName],
+                    (error, results) => {
+                        if (error) reject(error);
+                        resolve(results);
+                    }
+                );
+            });
+        }else{
+            tableName = agendaInfo[0].agenda_table_name;
+        }
+
+        const addEventResult = await new Promise((resolve, reject) => {
+            connection_agenda.query(
+                `INSERT INTO ${tableName} (start_hour, end_hour, date, color,nom, description,id_groupe_link) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                [heure_debut, heure_fin, date,color,titre,description,id_groupe],
+                (error, results) => {
+                    if (error) reject(error);
+                    resolve(results);
+                }
+            );
+        });
+
+
+    } catch (error) {
+        console.error('Erreur lors de la création de l\'agenda:', error);
+        res.status(500).json({ error: 'Erreur lors de la création de l\'agenda' });
+    }
+
+});
+
+app.get('/getAllEvents', async (req, res) => {
+    const token = req.cookies.token;
+    if (verificationAll(req) == false) {
+        return res.sendFile(path.join(__dirname, './connexion/connexion.html'));
+    }
+
+    const userData = verifyToken(token);
+    if (!userData) {
+        return res.status(401).json({ error: 'Token invalide' });
+    }
+
+    try {
+        // D'abord, récupérer les informations de base des fiches
+        const tablesInfo = await new Promise((resolve, reject) => {
+            connection_agenda.query(
+                `SELECT agenda_table_name FROM users_agenda WHERE user_id = ?`,
+                [userData.userID],
+                (error, results) => {
+                    if (error) reject(error);
+                    resolve(results);
+                }
+            );
+        });
+
+        // Pour chaque fiche, récupérer le dernier contenu
+        const eventsWithContent = await Promise.all(tablesInfo.map(async (agenda) => {
+            try {
+                const content = await new Promise((resolve, reject) => {
+                    connection_agenda.query(
+                        `SELECT * FROM ${agenda.agenda_table_name}`,
+                        (error, results) => {
+                            if (error) reject(error);
+                            resolve(results);
+                        }
+                    );
+                });
+                return {
+                    events: content
+                };
+            } catch (error) {
+                console.error(`Erreur pour la table ${agenda.agenda_table_name}:`, error);
+                return {
+                    events: [],
+                    error: 'Erreur lors de la récupération du contenu'
+                };
+            }
+        }));
+
+        res.json({
+            success: true,
+            data: eventsWithContent,
+            message: eventsWithContent.length === 0 ? 'Aucun événement trouvé pour cet utilisateur' : undefined
+        });
+    } catch (error) {
+        console.error('Erreur lors de la récupération:', error);
+        res.status(500).json({ error: 'Erreur lors de la récupération' });
+    }
+});
+
+
+
+// fonction de codaage et de décodage
+
 async function hashPassword(password) {
     const hash = await bcrypt.hash(password, saltRounds);
     return hash;
 }
+
+hashPassword('admin').then(hash => console.log(hash));
 
 async function verifyPassword(password, hash) {
     const match = await bcrypt.compare(password, hash);
@@ -698,7 +872,6 @@ function verificationAll(req) {
     return true;
 }
 
-
 // Fonction pour générer un token JWT
 function generateToken(name, id) {
     const payload = {
@@ -706,7 +879,7 @@ function generateToken(name, id) {
         userID: id,
         role: "admin"
     };
-    const options = { expiresIn: '1h' };
+    const options = { expiresIn: '1h' };;
     return jwt.sign(payload, SECRET_KEY, options);
 }
 

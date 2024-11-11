@@ -1,3 +1,22 @@
-<div class="div_fiche">
-                    <h1 id="titre_fiche">Philo</h1>
-                <div class="div_titre_fiche normal" id_titre_fiche="0">Comment vas tu ?</div><div class="div_def_fiche first" id_def_fiche="1"><strong>Le bien:</strong> c'est très compliqé</div></div>
+    <math-field id="maths"></math-field>
+    <div id="output"></div>
+
+    <script src="//unpkg.com/mathlive"></script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const mathField = document.querySelector('math-field');
+        const output = document.getElementById('output');
+
+        mathField.addEventListener('input', function() {
+            // Récupère le LaTeX pur
+            const latex = mathField.getValue('latex');
+
+            // Insère le LaTeX dans le conteneur avec le format requis pour MathJax
+            output.textContent = `\\(${latex}\\)`;
+
+            // Demande à MathJax de reprocesser le conteneur pour afficher le rendu
+            MathJax.typesetPromise([output]);
+        });
+    });
+</script>
