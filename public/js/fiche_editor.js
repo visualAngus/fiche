@@ -691,7 +691,7 @@ function update() {
     let liste_def = [];
 
     if (id < children.length+1) {
-        id = children.length+1;
+        id += children.length+1;
         localStorage.setItem("nb_editor", id);
     }
 
