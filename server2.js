@@ -209,8 +209,10 @@ app.post('/save', async (req, res) => {
         return res.status(401).json({ error: 'Token invalide' });
     }
 
+
+    const token_new = generateToken(userData.username, userData.userID);
     // si le token est bon, mettre à jourt le token chez le client pour une durée de 1h
-    res.cookie('token', token, { maxAge: 3600000, sameSite: 'Lax' });
+    res.cookie('token', token_new, { maxAge: 3600000, sameSite: 'Lax' });
     const { id, inner_html, local_storage, commentaire = 'Mise à jour' } = req.body;
     let encryptedInnerHtml = encryptWithSecondaryKey(inner_html, secondaryKey);
     let encryptedLocalStorage = encryptWithSecondaryKey(local_storage, secondaryKey);
@@ -843,6 +845,52 @@ app.get('/getAllEvents', async (req, res) => {
     }
 });
 
+app.post('/deleteEvent', async (req, res) => {
+    const token = req.cookies.token;
+    if (verificationAll(req) == false) {
+        return
+    }
+
+    const userData = verifyToken(token);
+    if (!userData) {
+        return res.status(401).json({ error: 'Token invalide' });
+    }
+
+    const { event_id } = req.body;
+
+    try {
+        // Récupérer le nom de la table
+        const tableInfo = await new Promise((resolve, reject) => {
+            connection_agenda.query(
+                `SELECT agenda_table_name FROM users_agenda WHERE user_id = ?`,
+                [userData.userID],
+                (error, results) => {
+                    if (error) reject(error);
+                    resolve(results);
+                }
+            );
+        });
+        if (tableInfo.length === 0) {
+            return res.status(404).json({ error: 'Agenda non trouvé' });
+        }
+        // Insérer la nouvelle version
+        await new Promise((resolve, reject) => {
+            connection_agenda.query(
+                `DELETE FROM ${tableInfo[0].agenda_table_name} WHERE event_id = ?`,
+                [event_id],
+                (error, results) => {
+                    if (error) reject(error);
+                    resolve(results);
+                }
+            );
+        });
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Erreur lors de la suppression:', error);
+        res.status(500).json({ error: 'Erreur lors de la suppression' });
+    }
+});
 
 
 // fonction de codaage et de décodage

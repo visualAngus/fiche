@@ -139,7 +139,8 @@
         if (response.ok) {
             console.log(data);
             if (data.success) {
-                openFicheEditor(data.id);
+                // console.log(data.ficheId);
+                openFicheEditor(data.ficheId);
             }
         }
     }

@@ -160,7 +160,11 @@ function createEditorTexte(id, content, important) {
         { text: "Centre", onclick: "justifyCenter()" },
         { text: "Droite", onclick: "justifyRight()" },
         { separator: true },
-        { text: "Surligné", onclick: "surligne(color)" }
+        { text: "Surligné", onclick: "surligne(color)" },
+        { text: "color", onclick: "" },
+        // { separator: true },
+        // { text: "Maths", onclick: "open_maths_keyboard()" }
+
 
     ];
 
@@ -170,25 +174,33 @@ function createEditorTexte(id, content, important) {
             separator.className = "separateur";
             toolbar.appendChild(separator);
         } else {
-            const btn = document.createElement("button");
-            btn.textContent = button.text;
-            btn.setAttribute("onclick", button.onclick);
-            toolbar.appendChild(btn);
+            if (button.text === "color") {
+                const color_picker = document.createElement("input");
+                color_picker.type = "color";
+                color_picker.value = color;
+                color_picker.addEventListener("input", () => {
+                    color = color_picker.value;
+                    surligne(color);
+                    div_txt.innerHTML = editor.innerHTML;
+                    localStorage.setItem("editorContent_" + id, editor.innerHTML);
+                    localStorage.setItem("editorImportant_" + id, important);
+                });
+                toolbar.appendChild(color_picker);
+            } else if (button.text === "Maths") {
+                const btn = document.createElement("button");
+                btn.textContent = button.text;
+                btn.addEventListener("click", () => {
+                    open_maths_keyboard(editor);
+                });
+                toolbar.appendChild(btn);
+            }else {
+                const btn = document.createElement("button");
+                btn.textContent = button.text;
+                btn.setAttribute("onclick", button.onclick);
+                toolbar.appendChild(btn);
+            }
         }
     });
-
-    const color_picker = document.createElement("input");
-    color_picker.type = "color";
-    color_picker.value = color;
-    color_picker.addEventListener("input", () => {
-        color = color_picker.value;
-        surligne(color);
-
-        div_txt.innerHTML = editor.innerHTML;
-        localStorage.setItem("editorContent_" + id, editor.innerHTML);
-        localStorage.setItem("editorImportant_" + id, important);
-    });
-    toolbar.appendChild(color_picker);
 
     headerEditorTxt.appendChild(toolbar);
 
@@ -681,6 +693,27 @@ function remove_definition_title(elem) {
     }
 }
 
+function open_maths_keyboard(body_elem) {
+    const mathField = '<math-field id="maths"></math-field>';
+    
+    const output = document.createElement("div");
+    output.id = "output";
+
+    body_elem.innerHTML += mathField;
+    body_elem.appendChild(output);
+
+
+    mathField.addEventListener('input', function() {
+        // Récupère le LaTeX pur
+        const latex = mathField.getValue('latex');
+
+        // Insère le LaTeX dans le conteneur avec le format requis pour MathJax
+        output.textContent = `\\(${latex}\\)`;
+
+        // Demande à MathJax de reprocesser le conteneur pour afficher le rendu
+        MathJax.typesetPromise([output]);
+    });
+}
 
 function update() {
     let div_fiche = document.querySelector(".div_fiche");

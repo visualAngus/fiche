@@ -259,6 +259,8 @@
         if (event.querySelector('.control_pannel')) {
             return;
         }
+        let id = event.id;
+        console.log(id);
         let div_main = document.createElement('div');
         div_main.classList.add('control_pannel');
 
@@ -271,6 +273,10 @@
         del.classList.add('delete');
         del.innerHTML = 'Delete';
         div_main.appendChild(del);
+
+        del.addEventListener('click', function (e) {
+            delete_event_data_base(id);
+        });
 
         event.appendChild(div_main);
         edit.addEventListener('click', function (e) {
@@ -334,11 +340,6 @@
         document.querySelector('#' + jour_fr).appendChild(event);
         event.style.animation = 'show_anni .6s cubic-bezier(0.68, -0.55, 0.27, 1.55)';
     }
-
-    addEvent('Event 1', 'Event 1 description', '2024-11-07', '10:00', '14:00', "event1", 1, "#4CAF50");
-    addEvent('Event 2', 'Event 2 description', '2024-11-06', '09:00', '11:00', "event2", 1, "#4CAF50");
-    addEvent('Event 3', 'Event 3 description', '2024-11-07', '14:00', '18:00', "event3", 1, "#4CAF50");
-    addEvent('Event 4', 'Event 4 description', '2024-11-04', '16:00', '18:00', "event4", 1, "#4CAF50");
 
     document.addEventListener('mouseover', function (e) {
         if (e.target.closest('.event')) {
@@ -547,6 +548,24 @@
         });
     }
 
+    function delete_event_data_base(id) {
+        fetch('/deleteEvent', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                event_id: id
+            })
+        }).then(response => {
+            return response.json();
+        }).then(data => {
+            console.log(data);
+            document.getElementById(id).remove();
+        });
+    }
+
+
     function getAllEvents() {
         fetch('/getAllEvents', {
             method: 'GET',
@@ -567,7 +586,6 @@
         });
     }
     getAllEvents()
-    // insert_event_data_base('Event 1', 'Event 1 description', '2024-11-07', '10:00', '14:00', 1, "#4CAF50");
 </script>
 
 </html>

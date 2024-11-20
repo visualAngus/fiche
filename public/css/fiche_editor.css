@@ -551,42 +551,45 @@ span {
     opacity: 0.5;
 }
 
-.div_txt_fiche span {
+.div_txt_fiche span,.div_def_fiche span {
     background-color: inherit;
     border-radius: 5px;
     padding-top: 3px;
     padding-bottom: 3px;
 }
 
-.div_txt_fiche b {
+.div_txt_fiche b,.div_def_fiche b{
+    background-color: inherit;
+    border-radius: 5px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    background-color: transparent !important;
+
+}
+
+.div_txt_fiche i,.div_def_fiche i{
+    background-color: inherit;
+    border-radius: 5px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    background-color: transparent !important;
+}
+
+.div_txt_fiche u,.div_def_fiche u{
     background-color: inherit;
     border-radius: 5px;
     padding-top: 3px;
     padding-bottom: 3px;
 }
 
-.div_txt_fiche i {
+.div_txt_fiche s,.div_def_fiche s{
     background-color: inherit;
     border-radius: 5px;
     padding-top: 3px;
     padding-bottom: 3px;
 }
 
-.div_txt_fiche u {
-    background-color: inherit;
-    border-radius: 5px;
-    padding-top: 3px;
-    padding-bottom: 3px;
-}
-
-.div_txt_fiche s {
-    background-color: inherit;
-    border-radius: 5px;
-    padding-top: 3px;
-    padding-bottom: 3px;
-}
-
-.div_txt_fiche a {
+.div_txt_fiche a,.div_def_fiche a{
     background-color: inherit;
     border-radius: 5px;
     padding-top: 3px;
